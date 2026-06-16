@@ -1,0 +1,16 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- gradiente do accent (#f86244): igual ao da marca na barra flutuante -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fa7a5e"/>
+      <stop offset="1" stop-color="#d04a30"/>
+    </linearGradient>
+  </defs>
+  <!-- fundo laranja totalmente arredondado (círculo) -->
+  <circle cx="128" cy="128" r="128" fill="url(#bg)"/>
+  <!-- check branco centralizado (Phosphor bold) -->
+  <g transform="translate(34, 32) scale(0.74)">
+    <path fill="#ffffff"
+      d="M232.49,80.49l-128,128a12,12,0,0,1-17,0l-56-56a12,12,0,0,1,17-17L96,183,215.51,63.51a12,12,0,0,1,17,17Z"/>
+  </g>
+</svg>

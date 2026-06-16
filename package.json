@@ -1,0 +1,52 @@
+{
+  "name": "minha-board",
+  "version": "1.0.0",
+  "description": "To-Do pessoal em board estilo Milanote — notas em papel pautado, salvas localmente.",
+  "author": "RM Digital",
+  "license": "UNLICENSED",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "icon": "node build-icon.js",
+    "dist": "electron-builder --win",
+    "release": "electron-builder --win --publish always"
+  },
+  "build": {
+    "appId": "com.rmdigital.minhaboard",
+    "productName": "Minha Board",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "daniloaguillar",
+        "repo": "minha-board"
+      }
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Minha Board",
+      "uninstallDisplayName": "Minha Board",
+      "artifactName": "Minha-Board-Setup-${version}.${ext}"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9"
+  },
+  "devDependencies": {
+    "electron": "31.7.7",
+    "electron-builder": "24.13.3"
+  }
+}

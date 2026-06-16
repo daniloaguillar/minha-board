@@ -1,0 +1,1557 @@
+/* ===== Minha Board — estilos =====
+   Temas: claro e escuro via [data-theme] no <html>. Todas as cores de
+   superfície/borda/texto vêm de variáveis; o accent é o coral #f86244. */
+
+:root {
+  /* layout */
+  --grid-size: 30px;
+  --line-height: 30px;
+  --note-pad-top: 44px;
+
+  /* accent (igual nos dois temas) */
+  --accent: #f86244;
+  --accent-hover: #fa7a5e;
+  --accent-dim: #d04a30;
+  --on-accent: #ffffff;
+  --accent-soft: rgba(248, 98, 68, 0.14);
+  --accent-glow: rgba(248, 98, 68, 0.32);
+  --danger: #ef5350;
+}
+
+/* ---------- Tema escuro (padrão) ---------- */
+:root,
+:root[data-theme='dark'] {
+  --bg: #1f2024;
+  --grid-dot: rgba(255, 255, 255, 0.11);
+  --grid-dot-soft: rgba(255, 255, 255, 0.07);
+
+  --panel: #1a1b1f;        /* painéis laterais */
+  --panel-2: #202227;      /* popovers, toolbars, pasta aberta */
+  --panel-3: #1a1c21;      /* cabeçalho da pasta */
+  --card: #24262b;         /* cards dentro dos painéis */
+  --glass: rgba(28, 29, 34, 0.88);
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --hover: rgba(255, 255, 255, 0.08);
+  --hover-strong: rgba(255, 255, 255, 0.12);
+
+  --ink: #f3f4f6;
+  --ink-soft: #b8bcc4;
+
+  --note-bg: #2c2f34;
+  --note-bg-2: #303338;
+  --note-line: rgba(255, 255, 255, 0.22);
+  --note-margin: rgba(255, 255, 255, 0.22);
+
+  --scroll: rgba(255, 255, 255, 0.18);
+  --scroll-hover: rgba(255, 255, 255, 0.32);
+
+  --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-card-hi: 0 18px 40px rgba(0, 0, 0, 0.55);
+  --shadow-lift: 0 24px 50px rgba(0, 0, 0, 0.6);
+  --shadow-panel: -14px 0 34px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 14px 34px rgba(0, 0, 0, 0.55);
+  --shadow-folder: 0 18px 42px rgba(0, 0, 0, 0.5);
+
+  --tip-bg: #0e0f12;
+  --tip-ink: #f3f4f6;
+}
+
+/* ---------- Tema claro ---------- */
+:root[data-theme='light'] {
+  --bg: #fff6f5; /* offwhite quente na board */
+  --grid-dot: rgba(20, 24, 32, 0.16);
+  --grid-dot-soft: rgba(20, 24, 32, 0.1);
+
+  --panel: #f3f4f6;   /* painéis e pastas usam o cinza */
+  --panel-2: #f3f4f6;
+  --panel-3: #eaecf0;
+  --card: #ffffff;    /* cards internos destacam sobre o cinza */
+  --glass: rgba(243, 244, 246, 0.92);
+
+  --border: rgba(15, 23, 42, 0.1);
+  --border-strong: rgba(15, 23, 42, 0.18);
+  --hover: rgba(15, 23, 42, 0.06);
+  --hover-strong: rgba(15, 23, 42, 0.1);
+
+  --ink: #1c1f26;
+  --ink-soft: #5d6573;
+
+  --note-bg: #eceef2;
+  --note-bg-2: #f6f7f9;
+  --note-line: rgba(0, 0, 0, 0.16);
+  --note-margin: rgba(0, 0, 0, 0.18);
+
+  --scroll: rgba(15, 23, 42, 0.22);
+  --scroll-hover: rgba(15, 23, 42, 0.38);
+
+  --shadow-card: 0 8px 20px rgba(15, 23, 42, 0.1), 0 2px 6px rgba(15, 23, 42, 0.07);
+  --shadow-card-hi: 0 16px 34px rgba(15, 23, 42, 0.16);
+  --shadow-lift: 0 24px 50px rgba(15, 23, 42, 0.22);
+  --shadow-panel: -14px 0 34px rgba(15, 23, 42, 0.1);
+  --shadow-pop: 0 14px 34px rgba(15, 23, 42, 0.18);
+  --shadow-folder: 0 18px 42px rgba(15, 23, 42, 0.14);
+
+  --tip-bg: #1c1f26;
+  --tip-ink: #f3f4f6;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Segoe UI', system-ui, -apple-system, 'Inter', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Barra flutuante (estilo Figma) ---------- */
+.toolbar {
+  position: fixed;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-pop);
+  z-index: 100000; /* acima de qualquer card (z dos cards cresce com o uso) */
+}
+
+.tb-brand {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 2px;
+  border-radius: 50%; /* redondo, igual ao ícone do app */
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent-dim));
+  color: #fff;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.tb-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.tb-div {
+  width: 26px;
+  height: 1px;
+  margin: 5px 0;
+  background: var(--border-strong);
+}
+
+.tb-btn {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  border-radius: 11px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.14s ease, color 0.14s ease, transform 0.08s ease,
+    box-shadow 0.14s ease;
+}
+.tb-btn:hover { background: var(--hover); color: var(--ink); }
+.tb-btn:active { transform: scale(0.94); }
+.tb-btn[hidden] { display: none; }
+
+/* Botão de destaque (Nova nota) e estado ativo (ex.: modo desenho ligado) */
+.tb-btn.primary,
+.tb-btn.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 6px 16px var(--accent-glow);
+}
+.tb-btn.primary:hover,
+.tb-btn.btn-primary:hover {
+  background: var(--accent-hover);
+  color: var(--on-accent);
+}
+
+/* Contador (Concluídos / Lixeira) */
+.tb-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px var(--glass);
+}
+.tb-badge[hidden] { display: none; }
+
+/* Tooltip à direita do botão */
+.tb-btn::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  background: var(--tip-bg);
+  color: var(--tip-ink);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.12s ease 0.18s, transform 0.12s ease 0.18s;
+  z-index: 100400;
+}
+.tb-btn:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* ---------- Botões genéricos ---------- */
+.btn {
+  border: none;
+  border-radius: 9px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease, opacity 0.15s ease;
+}
+.btn:active { transform: scale(0.96); }
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn-primary:hover { background: var(--accent-hover); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px solid var(--border-strong);
+}
+.btn-ghost:hover { color: var(--ink); border-color: var(--border-strong); }
+
+.badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 4px;
+  border-radius: 9px;
+  background: var(--hover-strong);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+/* ---------- Board / Canvas ---------- */
+/* Fundo pontilhado estilo caderno de desenho (dot grid). O espaçamento
+   é igual ao GRID de snap, então os cards "encaixam" nos pontos. */
+.board {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 0 0, var(--grid-dot) 1.8px, transparent 2px);
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: 0 0;
+}
+
+body.draw-mode .empty-state { display: none; }
+
+/* Canvas responsivo: ocupa exatamente a área visível da board.
+   Assim nenhum card fica "perdido" fora da janela. */
+.canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0; /* zoom/pan a partir do canto: translate()+scale() via JS */
+}
+/* Durante o pan da board, cursor de "mão fechada" em tudo */
+body.panning, body.panning * { cursor: grabbing !important; user-select: none !important; }
+
+/* ---------- Empty state ---------- */
+.empty-state {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.empty-state.hidden { display: none; }
+
+.empty-card {
+  text-align: center;
+  pointer-events: auto;
+  max-width: 360px;
+  padding: 32px;
+}
+.empty-check {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  color: var(--accent);
+  font-size: 28px;
+}
+.empty-card h2 { font-size: 20px; margin-bottom: 8px; }
+.empty-card p { color: var(--ink-soft); font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+
+/* ---------- Note (papel pautado) ----------
+   As cores do papel vêm do JS (paleta por tema). O texto das notas usa
+   cores fixas: claro em papel escuro; a classe .light-note inverte. */
+.note {
+  position: absolute;
+  width: 280px;
+  min-height: 200px;
+  background: linear-gradient(160deg, var(--note-bg-2), var(--note-bg));
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  cursor: grab;
+  touch-action: none;
+  transition: box-shadow 0.18s ease;
+}
+.note:focus-within,
+.note.dragging {
+  box-shadow:
+    var(--shadow-card-hi),
+    0 0 0 1.5px var(--accent-dim);
+  outline: none;
+}
+.note.dragging,
+.note.dragging * {
+  cursor: grabbing !important;
+}
+
+.note-head {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--note-pad-top);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  cursor: grab;
+  z-index: 2;
+}
+.note-head:active { cursor: grabbing; }
+/* Dica visual de arraste (pontinhos no centro do topo) */
+.note-head::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 4px;
+  background: radial-gradient(circle, rgba(243, 244, 246, 0.85) 1.3px, transparent 1.7px);
+  background-size: 7px 4px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+.note.light-note .note-head::after {
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.7) 1.3px, transparent 1.7px);
+  background-size: 7px 4px;
+}
+
+.note-check {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: transparent;
+  border-radius: 6px;
+  color: transparent;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.note-check:hover { border-color: var(--accent); color: rgba(248, 98, 68, 0.4); }
+.note.all-checked .note-check {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.note-head-spacer { flex: 1 1 auto; }
+
+/* Botões do cabeçalho (cor, concluir, excluir) — aparecem ao passar o mouse */
+.note-color,
+.note-archive,
+.note-del {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: rgba(243, 244, 246, 0.72);
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+  opacity: 0;
+  display: grid;
+  place-items: center;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+.note:hover .note-color,
+.note:hover .note-archive,
+.note:hover .note-del { opacity: 0.7; }
+.note-color:hover,
+.note-archive:hover { background: rgba(255, 255, 255, 0.1); color: #fff; opacity: 1; }
+.note-del:hover { background: rgba(239, 83, 80, 0.18); color: var(--danger); opacity: 1; }
+
+.note-archive { font-size: 14px; }
+
+/* Pontinho que mostra a cor atual do card */
+.color-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  background: var(--note-bg);
+}
+.note.light-note .color-dot { border-color: rgba(0, 0, 0, 0.35); }
+
+/* Cards com papel claro (paleta clara ou cor personalizada): texto escuro */
+.note.light-note {
+  --note-line: rgba(0, 0, 0, 0.16);
+  --note-margin: rgba(0, 0, 0, 0.18);
+}
+.note.light-note .note-title,
+.note.light-note .item-content,
+.note.light-note .item[data-marker='bullet'] .item-content { color: #15171c; }
+.note.light-note .item-marker { color: rgba(0, 0, 0, 0.55); }
+.note.light-note .note-check { border-color: rgba(0, 0, 0, 0.4); }
+.note.light-note .check-box { border-color: rgba(0, 0, 0, 0.4); }
+.note.light-note .note-color,
+.note.light-note .note-archive,
+.note.light-note .note-del { color: rgba(0, 0, 0, 0.6); }
+.note.light-note .note-color:hover,
+.note.light-note .note-archive:hover { background: rgba(0, 0, 0, 0.08); color: #15171c; }
+.note.light-note .note-title:empty::before,
+.note.light-note .item-content:empty::before { color: rgba(0, 0, 0, 0.45); }
+
+/* Área pautada — linhas horizontais + margem lateral */
+.note-lines {
+  flex: 1;
+  position: relative;
+  margin-top: var(--note-pad-top);
+  padding: 0 14px 14px 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* as linhas pautadas rolam junto com o conteúdo */
+  background-attachment: local, local;
+  background-image:
+    /* linha vertical de margem (estilo caderno) — à direita da coluna de marcadores */
+    linear-gradient(to right, transparent 54px, var(--note-margin) 54px, var(--note-margin) 55px, transparent 55px),
+    /* linhas horizontais pautadas */
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(var(--line-height) - 1px),
+      var(--note-line) calc(var(--line-height) - 1px),
+      var(--note-line) var(--line-height)
+    );
+  background-position: 0 0, 0 0;
+}
+
+/* Título da nota (opcional) */
+.note-title {
+  position: relative;
+  padding-left: 60px;
+  min-height: var(--line-height);
+  line-height: var(--line-height);
+  font-family: 'Segoe UI', system-ui, 'Inter', Roboto, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+  outline: none;
+  cursor: text;
+  word-break: break-word;
+  white-space: pre-wrap;
+  caret-color: var(--accent);
+}
+.note-title:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(243, 244, 246, 0.45);
+  font-weight: 700;
+}
+
+.note-items {
+  position: relative;
+  min-height: calc(var(--line-height) * 3);
+}
+
+/* Cada linha = uma pauta. Marcador na coluna da esquerda, texto à direita.
+   A "calha" (padding-left) à esquerda reserva espaço para a alça de reordenar,
+   afastando-a da caixa de seleção. */
+.item {
+  display: flex;
+  align-items: flex-start;
+  min-height: var(--line-height);
+  position: relative;
+  padding-left: 18px;
+}
+
+/* Alça de reordenar (⠿) — na calha à esquerda, separada do checkbox */
+.item-drag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 18px;
+  height: var(--line-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1;
+  cursor: grab;
+  opacity: 0;
+  border-radius: 5px;
+  user-select: none;
+  transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
+  z-index: 2;
+}
+.item:hover .item-drag { opacity: 0.4; }
+/* Ao passar o mouse na própria alça: bem visível e em destaque */
+.item-drag:hover { opacity: 1; color: var(--accent); background: var(--hover); }
+.item-drag:active { cursor: grabbing; }
+.note.light-note .item-drag { color: rgba(0, 0, 0, 0.5); }
+.item.item-dragging {
+  background: var(--hover);
+  border-radius: 6px;
+  box-shadow: var(--shadow-card);
+}
+body.reordering, body.reordering * { cursor: grabbing !important; user-select: none !important; }
+
+.item-marker {
+  flex: 0 0 28px;
+  height: var(--line-height);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  color: rgba(243, 244, 246, 0.72);
+  font-size: 16px;
+  font-weight: 700;
+  user-select: none;
+  cursor: pointer;
+  opacity: 0.85;
+}
+.item[data-marker='bullet'] .item-marker { font-size: 22px; }
+.item[data-marker='bullet'] .item-marker:hover { color: var(--accent); }
+
+/* Checkbox das tarefas */
+.check-box {
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1.7px solid rgba(255, 255, 255, 0.32);
+  border-radius: 4px;
+  display: inline-grid;
+  place-items: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.item-marker:hover .check-box { border-color: var(--accent); }
+.item[data-done='true'] .check-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.item[data-done='true'] .check-box::after {
+  content: '✓';
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--on-accent);
+  line-height: 1;
+}
+
+/* Tarefa concluída — texto riscado */
+.item[data-done='true'] .item-content {
+  text-decoration: line-through;
+  text-decoration-color: var(--accent);
+  color: rgba(243, 244, 246, 0.6);
+}
+.note.light-note .item[data-done='true'] .item-content { color: rgba(0, 0, 0, 0.45); }
+
+.item-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-left: 6px;
+  font-family: 'Segoe UI', system-ui, 'Inter', Roboto, sans-serif;
+  font-size: 15px;
+  line-height: var(--line-height);
+  color: #f3f4f6;
+  outline: none;
+  word-break: break-word;
+  white-space: pre-wrap;
+  caret-color: var(--accent);
+  cursor: text;
+}
+.item-content:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(243, 244, 246, 0.45);
+}
+
+/* Linha com bullet — usada como cabeçalho/empresa, em destaque */
+.item[data-marker='bullet'] .item-content {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.2px;
+  color: #ffffff;
+}
+
+.note-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 26px;
+  height: 26px;
+  cursor: nwse-resize;
+  z-index: 3;
+  border-bottom-right-radius: 10px;
+  background:
+    linear-gradient(135deg,
+      transparent 42%,
+      rgba(255, 255, 255, 0.32) 42%, rgba(255, 255, 255, 0.32) 52%,
+      transparent 52%, transparent 62%,
+      rgba(255, 255, 255, 0.32) 62%, rgba(255, 255, 255, 0.32) 72%,
+      transparent 72%, transparent 82%,
+      rgba(255, 255, 255, 0.32) 82%, rgba(255, 255, 255, 0.32) 92%,
+      transparent 92%);
+  transition: background-color 0.15s ease;
+}
+.note.light-note .note-resize {
+  background:
+    linear-gradient(135deg,
+      transparent 42%,
+      rgba(0, 0, 0, 0.28) 42%, rgba(0, 0, 0, 0.28) 52%,
+      transparent 52%, transparent 62%,
+      rgba(0, 0, 0, 0.28) 62%, rgba(0, 0, 0, 0.28) 72%,
+      transparent 72%, transparent 82%,
+      rgba(0, 0, 0, 0.28) 82%, rgba(0, 0, 0, 0.28) 92%,
+      transparent 92%);
+}
+.note-resize:hover {
+  background-color: var(--accent-soft);
+}
+
+/* Scrollbar das notas (aparece quando o conteúdo passa da altura) */
+.note-lines::-webkit-scrollbar { width: 8px; }
+.note-lines::-webkit-scrollbar-track { background: transparent; }
+.note-lines::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+}
+.note-lines::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.38); }
+.note.light-note .note-lines::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.28); }
+.note.light-note .note-lines::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.45); }
+
+/* Scrollbar discreta */
+.board::-webkit-scrollbar { width: 12px; height: 12px; }
+.board::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 10px;
+  border: 3px solid var(--bg);
+}
+.board::-webkit-scrollbar-thumb:hover { background: var(--scroll-hover); }
+
+/* ---------- Seletor de cor (popover) ---------- */
+.color-pop {
+  position: fixed;
+  z-index: 100300;
+  background: var(--panel-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: var(--shadow-pop);
+}
+.color-pop.hidden { display: none; }
+.color-pop .swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 30px);
+  gap: 8px;
+}
+.swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 2px solid var(--border-strong);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.08s ease, border-color 0.15s ease;
+}
+.swatch:hover { border-color: var(--accent); transform: scale(1.06); }
+.swatch-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--ink-soft);
+  font-size: 12px;
+  cursor: pointer;
+}
+.swatch-custom input[type='color'] {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ---------- Painéis laterais (Concluídos / Lixeira / Backup / Configurações) ---------- */
+.archive {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 330px;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  z-index: 100200;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-panel);
+  transform: translateX(0);
+  transition: transform 0.22s ease;
+}
+.archive.hidden { transform: translateX(105%); }
+
+.archive-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.archive-head h3 { font-size: 16px; font-weight: 700; }
+.archive-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 7px;
+}
+.archive-close:hover { background: var(--hover); color: var(--ink); }
+
+.archive-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.archive-empty {
+  padding: 24px 22px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.archive-empty .muted { opacity: 0.7; margin-top: 6px; }
+
+.archive-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent-dim);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.archive-item h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+.archive-item .tasks { margin-bottom: 10px; }
+.archive-item .task-row {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.archive-item .task-row.done { text-decoration: line-through; opacity: 0.6; }
+.archive-item .task-row.muted { opacity: 0.6; font-style: italic; }
+
+.archive-item .actions { display: flex; gap: 8px; }
+.mini-btn {
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 6px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.mini-btn.restore:hover { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.mini-btn.delete:hover { background: rgba(239, 83, 80, 0.18); color: var(--danger); border-color: rgba(239, 83, 80, 0.4); }
+
+.archive-list::-webkit-scrollbar { width: 10px; }
+.archive-list::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 10px;
+  border: 3px solid var(--panel);
+}
+
+/* ---------- Camada de desenho ---------- */
+.draw-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  touch-action: none;
+}
+body.draw-mode .draw-layer {
+  z-index: 99998; /* acima de todos os cards no modo desenho */
+  pointer-events: auto;
+  cursor: crosshair;
+}
+body.draw-mode .note,
+body.draw-mode .sheet,
+body.draw-mode .folder { pointer-events: none; }
+/* item sendo arrastado não bloqueia a detecção do alvo sob o cursor */
+.note.dragging,
+.sheet.dragging,
+.folder.dragging,
+.lifting { pointer-events: none; }
+/* item "levantado" durante o arraste (segue o cursor, flutua acima de tudo) */
+.lifting {
+  box-shadow: var(--shadow-lift) !important;
+  opacity: 0.96;
+  transform: rotate(-1deg);
+  transition: none;
+}
+
+/* ---------- Pasta (estilo Android) ---------- */
+.folder { position: absolute; touch-action: none; }
+
+/* Fechada: quadradinho com mini prévias */
+.folder.closed {
+  width: 144px;
+  height: 144px;
+  background: var(--hover);
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  padding: 12px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+}
+.folder.closed:hover { background: var(--hover-strong); transform: translateY(-1px); }
+.folder-mini {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 6px;
+}
+.mini-tile {
+  border-radius: 7px;
+  background: var(--note-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.mini-tile.sheet { background: #ffffff; }
+.mini-tile.empty { background: var(--hover); box-shadow: none; }
+.folder-foot { display: flex; align-items: center; gap: 6px; }
+.folder-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.folder-count {
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--hover-strong);
+  color: var(--ink-soft);
+  display: grid;
+  place-items: center;
+}
+
+/* Aberta: painel flutuante */
+.folder.open {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-folder);
+  overflow: hidden;
+}
+.folder.open.drop-target,
+.folder.closed.drop-target {
+  border-color: var(--accent);
+  border-style: dashed;
+  box-shadow: 0 0 0 2px var(--accent-glow), var(--shadow-folder);
+}
+.folder.flash { animation: flash 0.45s ease; }
+@keyframes flash {
+  0% { background: rgba(248, 98, 68, 0.45); }
+  100% { background: rgba(248, 98, 68, 0.12); }
+}
+
+.folder-head {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 12px;
+  background: var(--panel-3);
+  border-bottom: 1px solid var(--border);
+  cursor: grab;
+  flex-shrink: 0;
+  user-select: none;
+}
+.folder-head:active { cursor: grabbing; }
+.folder-grip {
+  width: 22px; height: 6px;
+  background: radial-gradient(circle, var(--ink-soft) 1.2px, transparent 1.6px);
+  background-size: 7px 4px; opacity: 0.4;
+}
+.folder-icon { font-size: 14px; }
+.folder-title {
+  flex: 0 1 auto;
+  font-size: 13px; font-weight: 700; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.folder-head-spacer { flex: 1; }
+.folder-rename, .folder-collapse, .folder-del, .folder-color {
+  width: 26px; height: 26px;
+  border: none; background: transparent; color: var(--ink-soft);
+  font-size: 13px; cursor: pointer; border-radius: 7px; display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.folder-rename:hover, .folder-collapse:hover, .folder-color:hover { background: var(--hover); color: var(--ink); }
+.folder-del:hover { background: rgba(239, 83, 80, 0.18); color: var(--danger); }
+.folder-color .color-dot { width: 13px; height: 13px; }
+
+/* Pasta colorida: contraste automático via --fink / --fink-soft (definidas no JS) */
+.folder.folder-colored .folder-title,
+.folder.folder-colored .folder-name { color: var(--fink); }
+.folder.folder-colored .folder-count { color: var(--fink-soft); }
+.folder.open.folder-colored .folder-head { color: var(--fink); }
+.folder.open.folder-colored .folder-rename,
+.folder.open.folder-colored .folder-collapse,
+.folder.open.folder-colored .folder-color,
+.folder.open.folder-colored .folder-del { color: var(--fink-soft); }
+.folder.open.folder-colored .folder-rename:hover,
+.folder.open.folder-colored .folder-collapse:hover,
+.folder.open.folder-colored .folder-color:hover { color: var(--fink); background: rgba(127, 127, 127, 0.22); }
+.folder.open.folder-colored .folder-grip {
+  background: radial-gradient(circle, var(--fink-soft) 1.2px, transparent 1.6px);
+  background-size: 7px 4px;
+}
+.folder-body {
+  position: relative;
+  flex: 1;
+  overflow: auto; /* rola quando algum item fica fora da área visível */
+  background-color: var(--panel-2);
+  background-image: radial-gradient(circle at 0 0, var(--grid-dot-soft) 1.6px, transparent 1.8px);
+  background-size: var(--grid-size) var(--grid-size);
+}
+.folder-body::-webkit-scrollbar { width: 9px; height: 9px; }
+.folder-body::-webkit-scrollbar-track { background: transparent; }
+.folder-body::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 8px;
+}
+.folder-body::-webkit-scrollbar-thumb:hover { background: var(--scroll-hover); }
+.folder-body::-webkit-scrollbar-corner { background: transparent; }
+.folder-resize {
+  position: absolute; right: 0; bottom: 0; width: 20px; height: 20px;
+  cursor: nwse-resize; z-index: 5;
+  background: linear-gradient(135deg, transparent 45%, var(--scroll) 45%, var(--scroll) 55%, transparent 55%, transparent 67%, var(--scroll) 67%, var(--scroll) 77%, transparent 77%);
+}
+/* Título da pasta em edição */
+.folder-title.editing {
+  flex: 1;
+  background: var(--hover);
+  border-radius: 6px;
+  padding: 2px 6px;
+  outline: 1px solid var(--accent);
+  cursor: text;
+  overflow: visible;
+  white-space: nowrap;
+  caret-color: var(--accent);
+}
+
+/* ---------- Painéis Lixeira / Backup (reusam .archive) ---------- */
+.head-actions { display: flex; align-items: center; gap: 8px; }
+.archive-head.sub { padding-top: 6px; padding-bottom: 6px; }
+
+.backup-body { padding: 16px 14px 6px; }
+.bk-note { font-size: 12.5px; line-height: 1.55; margin-bottom: 14px; color: var(--ink-soft); }
+.backup-actions { display: flex; flex-direction: column; gap: 8px; }
+.backup-actions .mini-btn { width: 100%; text-align: center; padding: 9px 12px; }
+.backup-mirror {
+  margin: 16px 0 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+}
+.bk-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.bk-status {
+  font-size: 12px;
+  color: var(--ink);
+  word-break: break-all;
+  margin-bottom: 10px;
+  background: var(--hover);
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.bk-hint { font-size: 11.5px; line-height: 1.5; margin-top: 10px; color: var(--ink-soft); }
+.muted { color: var(--ink-soft); }
+
+/* ---------- Painel de Configurações ---------- */
+.settings-body { padding: 18px 16px; flex: 1; min-height: 0; overflow-y: auto; }
+.settings-body::-webkit-scrollbar { width: 10px; }
+.settings-body::-webkit-scrollbar-thumb { background: var(--scroll); border-radius: 10px; border: 3px solid var(--panel); }
+.settings-body::-webkit-scrollbar-thumb:hover { background: var(--scroll-hover); }
+/* Seções (Backup, Sobre) separadas da Aparência */
+.set-section { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+.backup-list { margin-top: 10px; max-height: 240px; overflow-y: auto; }
+.backup-list::-webkit-scrollbar { width: 8px; }
+.backup-list::-webkit-scrollbar-thumb { background: var(--scroll); border-radius: 8px; }
+.set-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 10px;
+}
+.theme-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.theme-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 6px 12px;
+  background: var(--card);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease,
+    box-shadow 0.14s ease;
+}
+.theme-opt:hover { background: var(--hover); color: var(--ink); }
+.theme-opt.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.theme-opt.active svg { color: var(--accent); }
+.set-hint { font-size: 12px; line-height: 1.5; margin-top: 12px; }
+
+/* ---------- Aviso de atualização ---------- */
+.update-toast {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-pop);
+  font-size: 14px;
+  color: var(--ink);
+  animation: tut-in 0.22s ease;
+}
+.update-toast .btn { padding: 7px 12px; font-size: 13px; }
+
+/* ---------- Folha de desenho (card branco) ---------- */
+.sheet {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  touch-action: none;
+}
+.sheet:focus-within,
+.sheet.dragging {
+  box-shadow:
+    var(--shadow-card-hi),
+    0 0 0 1.5px var(--accent-dim);
+  outline: none;
+}
+.sheet-head {
+  height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  background: #eef0f2;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: grab;
+  flex-shrink: 0;
+  user-select: none;
+}
+.sheet-head:active { cursor: grabbing; }
+.sheet-grip {
+  width: 26px;
+  height: 6px;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.35) 1.2px, transparent 1.6px);
+  background-size: 7px 4px;
+  opacity: 0.6;
+}
+.sheet-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  letter-spacing: 0.2px;
+}
+.sheet-spacer { flex: 1; }
+.sheet-del {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: #9aa0aa;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+}
+.sheet-del:hover { background: rgba(239, 83, 80, 0.16); color: var(--danger); }
+.sheet-canvas {
+  flex: 1;
+  width: 100%;
+  display: block;
+  background: #ffffff;
+  cursor: crosshair;
+  touch-action: none;
+}
+.sheet-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 22px;
+  height: 22px;
+  cursor: nwse-resize;
+  z-index: 3;
+  background:
+    linear-gradient(135deg,
+      transparent 45%,
+      rgba(0, 0, 0, 0.28) 45%, rgba(0, 0, 0, 0.28) 55%,
+      transparent 55%, transparent 67%,
+      rgba(0, 0, 0, 0.28) 67%, rgba(0, 0, 0, 0.28) 77%,
+      transparent 77%);
+}
+
+/* ---------- Barra de ferramentas de desenho ---------- */
+.draw-toolbar {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-pop);
+  z-index: 100100;
+}
+.draw-toolbar.hidden { display: none; }
+.draw-toolbar .tool {
+  height: 34px;
+  min-width: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.13s ease, border-color 0.13s ease;
+}
+.draw-toolbar .tool:hover { background: var(--hover); }
+.draw-toolbar .tool.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.tb-sep {
+  width: 1px;
+  height: 26px;
+  background: var(--border-strong);
+}
+.draw-colors { display: flex; gap: 5px; }
+.draw-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.08s ease, border-color 0.13s ease;
+}
+.draw-swatch:hover { transform: scale(1.12); }
+.draw-swatch.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+.tb-custom { display: grid; place-items: center; }
+.tb-custom input[type='color'] {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+.tb-size { display: grid; place-items: center; }
+.tb-size input[type='range'] { width: 90px; cursor: pointer; accent-color: var(--accent); }
+.draw-toolbar .btn-primary { height: 34px; padding: 0 14px; }
+.draw-toolbar .shape-tool { font-size: 17px; line-height: 1; }
+
+/* Preview da ponta do brush */
+.brush-cursor {
+  position: fixed;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 100500;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+}
+.brush-cursor.eraser {
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.12);
+}
+.brush-cursor.shape { border-radius: 3px; }
+.brush-cursor.hidden { display: none; }
+
+/* Esconde o cursor nativo nas superfícies de desenho (usa o preview) */
+body.draw-mode .draw-layer { cursor: none; }
+.sheet-canvas { cursor: none; }
+
+/* ---------- Abas de boards (topo-centro, flutuante) ---------- */
+.board-tabs {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px;
+  max-width: min(72vw, 780px);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+}
+.board-tabs::-webkit-scrollbar { height: 0; }
+.board-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  transition: background 0.13s ease, color 0.13s ease, border-color 0.13s ease;
+}
+.board-tab:hover { background: var(--hover); color: var(--ink); }
+.board-tab.active { background: var(--accent-soft); color: var(--ink); border-color: var(--accent); }
+/* Alvo ao arrastar um item para transferir entre boards */
+.board-tab.drop-target {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  border-style: dashed;
+  color: var(--ink);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+.board-tab.flash { animation: tab-flash 0.5s ease; }
+@keyframes tab-flash {
+  0% { background: var(--accent); color: var(--on-accent); }
+  100% { background: transparent; }
+}
+.board-tab-name { outline: none; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.board-tab-name.editing {
+  background: var(--hover);
+  border-radius: 4px;
+  padding: 0 4px;
+  overflow: visible;
+  caret-color: var(--accent);
+}
+.board-tab-close {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+.board-tab-close:hover { background: rgba(239, 83, 80, 0.18); color: var(--danger); opacity: 1; }
+.board-tab-add {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.board-tab-add:hover { background: var(--hover); color: var(--ink); }
+
+/* ---------- HUD de zoom (canto inferior direito) ---------- */
+.zoom-hud {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+}
+.zoom-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  transition: background 0.13s ease, color 0.13s ease;
+}
+.zoom-btn:hover { background: var(--hover); color: var(--ink); }
+.zoom-level-btn {
+  min-width: 50px;
+  height: 30px;
+  padding: 0 6px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.13s ease;
+}
+.zoom-level-btn:hover { background: var(--hover); }
+.zoom-sep { width: 1px; height: 18px; background: var(--border-strong); margin: 0 2px; }
+/* No modo desenho da board, o zoom fica travado em 100% */
+body.draw-mode .zoom-hud { opacity: 0.4; pointer-events: none; }
+
+/* ---------- Tutorial de boas-vindas ---------- */
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100600; /* acima de toda a interface */
+  background: rgba(15, 16, 20, 0.55);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+}
+.tutorial-overlay.hidden { display: none; }
+
+.tutorial-card {
+  position: relative;
+  width: min(560px, calc(100vw - 48px));
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 30px 22px;
+  box-shadow: var(--shadow-pop);
+  animation: tut-in 0.22s ease;
+}
+@keyframes tut-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.tutorial-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.tutorial-close:hover { background: var(--hover); color: var(--ink); }
+
+.tutorial-icon { font-size: 38px; line-height: 1; margin-bottom: 12px; }
+.tutorial-card h2 { font-size: 20px; margin-bottom: 12px; color: var(--ink); }
+
+.tutorial-body {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.65;
+  min-height: 172px; /* o card não "pula" de altura entre os passos */
+}
+.tutorial-body p { margin-bottom: 10px; }
+.tutorial-body ul { margin: 0 0 10px 18px; padding: 0; }
+.tutorial-body li { margin-bottom: 8px; }
+.tutorial-body b { color: var(--ink); }
+.tutorial-body kbd {
+  display: inline-block;
+  padding: 1px 7px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--hover);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tutorial-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+.tutorial-dots { display: flex; gap: 7px; }
+.tut-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: var(--border-strong);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.tut-dot:hover { transform: scale(1.25); }
+.tut-dot.active { background: var(--accent); }
+.tutorial-nav { display: flex; gap: 8px; }

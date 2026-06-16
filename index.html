@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minha Board</title>
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:;" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Barra flutuante de ferramentas (estilo Figma, à esquerda) -->
+  <nav id="toolbar" class="toolbar" aria-label="Ferramentas">
+    <div class="tb-brand" title="Minha Board">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>
+    </div>
+    <div class="tb-div"></div>
+    <div class="tb-group">
+      <button id="btn-add" class="tb-btn primary" data-tip="Nova nota (N)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button id="btn-new-folder" class="tb-btn" data-tip="Nova pasta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+      </button>
+      <button id="btn-sheet" class="tb-btn" data-tip="Folha de desenho">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M22 6H2M22 18H2M6 2v20M18 2v20"/></svg>
+      </button>
+      <button id="btn-draw" class="tb-btn" data-tip="Desenhar na board">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+      </button>
+      <button id="btn-arrange" class="tb-btn" data-tip="Auto-organizar a board">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      </button>
+      <button id="btn-fit" class="tb-btn" data-tip="Ver board completo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      </button>
+    </div>
+    <div class="tb-div"></div>
+    <div class="tb-group">
+      <button id="btn-archive" class="tb-btn" data-tip="Concluídos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+        <span id="archive-count" class="tb-badge" hidden>0</span>
+      </button>
+      <button id="btn-trash" class="tb-btn" data-tip="Lixeira">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+        <span id="trash-count" class="tb-badge" hidden>0</span>
+      </button>
+      <button id="btn-clear" class="tb-btn" data-tip="Limpar a board">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg>
+      </button>
+    </div>
+    <div class="tb-div"></div>
+    <div class="tb-group">
+      <button id="btn-settings" class="tb-btn" data-tip="Configurações">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+      <button id="btn-help" class="tb-btn" data-tip="Como usar (tutorial)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Abas de boards (preenchidas via JS) -->
+  <div id="board-tabs" class="board-tabs" aria-label="Boards"></div>
+
+  <main id="board" class="board">
+    <div id="canvas" class="canvas">
+      <canvas id="draw-layer" class="draw-layer"></canvas>
+    </div>
+    <div id="empty-state" class="empty-state">
+      <div class="empty-card">
+        <div class="empty-check">✓</div>
+        <h2>Sua board está vazia</h2>
+        <p>Crie sua primeira nota para anotar o que precisa fazer hoje ou esta semana. Dica: duplo clique na board também cria uma nota.</p>
+        <button id="btn-add-empty" class="btn btn-primary">+ Criar primeira nota</button>
+      </div>
+    </div>
+
+    <!-- Controle de zoom (canto inferior direito) -->
+    <div id="zoom-hud" class="zoom-hud" aria-label="Zoom">
+      <button id="zoom-out" class="zoom-btn" title="Afastar (Ctrl −)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" width="16" height="16" aria-hidden="true"><path d="M5 12h14"/></svg>
+      </button>
+      <button id="zoom-reset" class="zoom-level-btn" title="Voltar a 100% (Ctrl 0)"><span id="zoom-level">100%</span></button>
+      <button id="zoom-in" class="zoom-btn" title="Aproximar (Ctrl +)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <span class="zoom-sep"></span>
+      <button id="zoom-fit" class="zoom-btn" title="Ver board completo (Ctrl 9)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      </button>
+    </div>
+  </main>
+
+  <!-- Barra de ferramentas do modo desenho -->
+  <div id="draw-toolbar" class="draw-toolbar hidden">
+    <button class="tool active" data-tool="pen" title="Caneta">✏️</button>
+    <button class="tool" data-tool="eraser" title="Borracha">🧽</button>
+    <span class="tb-sep"></span>
+    <button class="tool shape-tool" data-tool="rect" title="Retângulo (Shift = quadrado)">▭</button>
+    <button class="tool shape-tool" data-tool="ellipse" title="Elipse (Shift = círculo)">◯</button>
+    <button class="tool shape-tool" data-tool="line" title="Linha">╱</button>
+    <button class="tool shape-tool" data-tool="triangle" title="Triângulo">△</button>
+    <span class="tb-sep"></span>
+    <div id="draw-colors" class="draw-colors"></div>
+    <label class="tb-custom" title="Cor personalizada">
+      <input id="draw-custom" type="color" value="#f86244" />
+    </label>
+    <span class="tb-sep"></span>
+    <label class="tb-size" title="Espessura do traço">
+      <input id="draw-size" type="range" min="1" max="28" value="3" />
+    </label>
+    <span class="tb-sep"></span>
+    <button id="draw-clear" class="tool" title="Apagar todo o desenho">Limpar</button>
+    <button id="draw-done" class="btn btn-primary" title="Sair do modo desenho">Concluir</button>
+  </div>
+
+  <!-- Painel lateral: cards concluídos (guardados, não deletados) -->
+  <aside id="archive" class="archive hidden" aria-label="Cards concluídos">
+    <div class="archive-head">
+      <h3>Concluídos</h3>
+      <button id="archive-close" class="archive-close" title="Fechar">✕</button>
+    </div>
+    <div id="archive-list" class="archive-list"></div>
+    <div id="archive-empty" class="archive-empty">
+      <p>Nada guardado ainda.</p>
+      <p class="muted">Use o botão 📥 de um card para concluí-lo e guardá-lo aqui sem perder o conteúdo.</p>
+    </div>
+  </aside>
+
+  <!-- Painel: Lixeira (itens excluídos, recuperáveis) -->
+  <aside id="trash" class="archive hidden" aria-label="Lixeira">
+    <div class="archive-head">
+      <h3>Lixeira</h3>
+      <div class="head-actions">
+        <button id="trash-empty-btn" class="mini-btn delete">Esvaziar</button>
+        <button id="trash-close" class="archive-close" title="Fechar">✕</button>
+      </div>
+    </div>
+    <div id="trash-list" class="archive-list"></div>
+    <div id="trash-empty" class="archive-empty">
+      <p>Lixeira vazia.</p>
+      <p class="muted">Notas e folhas excluídas ficam aqui e podem ser restauradas a qualquer momento.</p>
+    </div>
+  </aside>
+
+  <!-- Painel: Configurações (inclui Backup e segurança) -->
+  <aside id="settings" class="archive hidden" aria-label="Configurações">
+    <div class="archive-head">
+      <h3>Configurações</h3>
+      <button id="settings-close" class="archive-close" title="Fechar">✕</button>
+    </div>
+    <div class="settings-body settings-scroll">
+      <div class="set-label">Aparência</div>
+      <div id="theme-picker" class="theme-picker">
+        <button class="theme-opt" data-theme-opt="light">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M22 12h-2M4 12H2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M19.07 19.07l-1.41-1.41M6.34 6.34 4.93 4.93"/></svg>
+          <span>Claro</span>
+        </button>
+        <button class="theme-opt" data-theme-opt="dark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <span>Escuro</span>
+        </button>
+        <button class="theme-opt" data-theme-opt="system">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          <span>Sistema</span>
+        </button>
+      </div>
+      <p class="muted set-hint">“Sistema” acompanha automaticamente o tema claro/escuro do Windows.</p>
+
+      <!-- Backup e segurança (somente no app desktop) -->
+      <div id="settings-backup" class="set-section" hidden>
+        <div class="set-label">Backup e segurança</div>
+        <p class="muted bk-note">Tudo é salvo no seu PC e copiado automaticamente para a pasta de backups. Para não perder nada se algo acontecer com o computador, exporte um arquivo ou ative uma cópia numa pasta de nuvem.</p>
+        <div class="backup-actions">
+          <button id="bk-export" class="mini-btn restore">⬇️ Exportar para arquivo…</button>
+          <button id="bk-import" class="mini-btn">⬆️ Importar de arquivo…</button>
+          <button id="bk-reveal" class="mini-btn">📂 Abrir pasta no PC</button>
+        </div>
+        <div class="backup-mirror">
+          <div class="bk-label">Cópia automática na nuvem</div>
+          <div id="bk-mirror-status" class="bk-status muted">Não configurada</div>
+          <div class="backup-actions">
+            <button id="bk-mirror-set" class="mini-btn">Escolher pasta…</button>
+            <button id="bk-mirror-clear" class="mini-btn delete" hidden>Remover</button>
+          </div>
+          <p class="muted bk-hint">Dica: aponte para uma pasta sincronizada do Google Drive, OneDrive ou Dropbox. A cada alteração, uma cópia é gravada lá.</p>
+        </div>
+        <div class="bk-label">Restaurar de um backup</div>
+        <div id="backup-list" class="backup-list"></div>
+      </div>
+
+      <!-- Sobre / atualizações -->
+      <div id="settings-about" class="set-section" hidden>
+        <div class="set-label">Sobre</div>
+        <div class="bk-status"><span class="muted">Versão</span> <span id="app-version">—</span></div>
+        <div class="backup-actions">
+          <button id="bk-update" class="mini-btn">🔄 Verificar atualizações</button>
+        </div>
+        <p id="update-status" class="muted bk-hint"></p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Tutorial de boas-vindas (primeira abertura e botão ❓ da barra) -->
+  <div id="tutorial" class="tutorial-overlay hidden" aria-label="Tutorial">
+    <div class="tutorial-card">
+      <button id="tut-close" class="tutorial-close" title="Pular tutorial">✕</button>
+      <div id="tut-icon" class="tutorial-icon"></div>
+      <h2 id="tut-title"></h2>
+      <div id="tut-body" class="tutorial-body"></div>
+      <div class="tutorial-foot">
+        <div id="tut-dots" class="tutorial-dots"></div>
+        <div class="tutorial-nav">
+          <button id="tut-prev" class="btn btn-ghost">← Anterior</button>
+          <button id="tut-next" class="btn btn-primary">Próximo →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modelo de uma nota (clonado via JS) -->
+  <template id="note-template">
+    <div class="note" tabindex="0">
+      <div class="note-head">
+        <button class="note-check" title="Marcar / desmarcar todas as tarefas">✓</button>
+        <span class="note-head-spacer"></span>
+        <button class="note-color" title="Mudar a cor do card"><span class="color-dot"></span></button>
+        <button class="note-archive" title="Concluir e guardar em Concluídos">📥</button>
+        <button class="note-del" title="Excluir nota">✕</button>
+      </div>
+      <div class="note-lines">
+        <div class="note-title" contenteditable="true" spellcheck="false" data-placeholder="Título"></div>
+        <div class="note-items"></div>
+      </div>
+      <div class="note-resize" title="Redimensionar"></div>
+    </div>
+  </template>
+
+  <!-- Modelo de uma folha de desenho (card branco móvel/redimensionável) -->
+  <template id="sheet-template">
+    <div class="sheet" tabindex="0">
+      <div class="sheet-head" title="Arraste para mover">
+        <span class="sheet-grip"></span>
+        <span class="sheet-label">Folha de desenho</span>
+        <span class="sheet-spacer"></span>
+        <button class="sheet-del" title="Excluir folha">✕</button>
+      </div>
+      <canvas class="sheet-canvas"></canvas>
+      <div class="sheet-resize" title="Redimensionar"></div>
+    </div>
+  </template>
+
+  <!-- Modelo de uma pasta FECHADA (quadradinho estilo Android) -->
+  <template id="folder-closed-template">
+    <div class="folder closed" tabindex="0" title="Clique para abrir">
+      <div class="folder-mini"></div>
+      <div class="folder-foot">
+        <span class="folder-name"></span>
+        <span class="folder-count"></span>
+      </div>
+    </div>
+  </template>
+
+  <!-- Modelo de uma pasta ABERTA (painel flutuante) -->
+  <template id="folder-open-template">
+    <div class="folder open" tabindex="0">
+      <div class="folder-head" title="Arraste para mover">
+        <span class="folder-grip"></span>
+        <span class="folder-icon">📂</span>
+        <span class="folder-title"></span>
+        <span class="folder-head-spacer"></span>
+        <button class="folder-color" title="Cor da pasta"><span class="color-dot"></span></button>
+        <button class="folder-rename" title="Renomear">✎</button>
+        <button class="folder-collapse" title="Fechar pasta">▾</button>
+        <button class="folder-del" title="Excluir pasta (itens voltam para a board)">🗑</button>
+      </div>
+      <div class="folder-body"></div>
+      <div class="folder-resize" title="Redimensionar"></div>
+    </div>
+  </template>
+
+  <!-- Modelo de uma linha (marcador: bullet ou check) -->
+  <template id="item-template">
+    <div class="item" data-marker="check">
+      <span class="item-drag" title="Arraste para reordenar" aria-hidden="true">⠿</span>
+      <span class="item-marker" title="Alternar marcador: bullet • / check ☐"></span>
+      <div class="item-content" contenteditable="true" spellcheck="false"></div>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
