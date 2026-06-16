@@ -1129,6 +1129,69 @@ body.draw-mode .folder { pointer-events: none; }
 .theme-opt.active svg { color: var(--accent); }
 .set-hint { font-size: 12px; line-height: 1.5; margin-top: 12px; }
 
+/* ---------- Tutorial guiado (spotlight + balão) ---------- */
+.guide-spot {
+  position: fixed;
+  z-index: 100650;
+  display: none;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(8, 9, 12, 0.6), 0 0 0 3px var(--accent);
+  pointer-events: none; /* deixa o alvo destacado clicável */
+  transition: left 0.2s ease, top 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+.guide-spot.no-target { box-shadow: 0 0 0 9999px rgba(8, 9, 12, 0.72); }
+.guide-bubble {
+  position: fixed;
+  z-index: 100660;
+  width: min(330px, calc(100vw - 24px));
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-pop);
+  animation: tut-in 0.2s ease;
+}
+.guide-text { font-size: 14px; line-height: 1.6; color: var(--ink); }
+.guide-text kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--hover);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+.guide-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.guide-count { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.guide-next { padding: 8px 14px; font-size: 13px; }
+.guide-skip {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 100660;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.13s ease, background 0.13s ease;
+}
+.guide-skip:hover { color: var(--ink); background: var(--hover); }
+
 /* ---------- Aviso de atualização ---------- */
 .update-toast {
   position: fixed;

@@ -1198,6 +1198,7 @@ function addFolder() {
   renderAll();
   pushItems(f);
   save();
+  guideNotify('folder');
 }
 
 // Auto-organizar: alinha os itens soltos da board (notas, folhas e pastas)
@@ -1698,6 +1699,7 @@ function addNoteInto(localX, localY, folderId, container) {
   const first = entry.el.querySelector('.item-content');
   setTimeout(() => focusStart(first), 30);
   save();
+  guideNotify('note');
   return entry;
 }
 function addNoteCentered() {
@@ -1848,7 +1850,7 @@ board.addEventListener('dblclick', (e) => {
 
 document.addEventListener('keydown', (e) => {
   const editing = document.activeElement?.isContentEditable;
-  if (!editing && !drawMode && !tutorialOpen() && (e.key === 'n' || e.key === 'N')) { e.preventDefault(); addNoteCentered(); }
+  if (!editing && !drawMode && !guideOn() && (e.key === 'n' || e.key === 'N')) { e.preventDefault(); addNoteCentered(); }
 });
 
 // ---------- Pan (arrastar o fundo) e zoom (roda do mouse) ----------
@@ -1902,135 +1904,138 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomByStep(1 / 1.2); }
 });
 
-// ---------- Tutorial de boas-vindas ----------
-// Aparece na primeira abertura; pode ser revisto a qualquer momento no ❓ da barra.
-const TUTORIAL_KEY = 'minha-board:tutorial-visto:v2';
-const tutorialEl = document.getElementById('tutorial');
-const TUT_STEPS = [
+// ---------- Tutorial guiado (passo a passo interativo) ----------
+// Destaca um botão, pede a ação e avança quando o usuário a realiza.
+// A versão da chave muda a cada grande atualização para reaparecer a todos.
+const TUTORIAL_KEY = 'minha-board:tutorial-guiado:v1';
+const GUIDE_STEPS = [
   {
-    icon: '👋',
-    title: 'Bem-vindo à Minha Board!',
-    html: `
-      <p>Sua board pessoal de tarefas e anotações — um mural de post-its digital.</p>
-      <p><b>Tudo é salvo automaticamente no seu computador</b> (com backups): nada se perde e nada vai para a internet.</p>
-      <p>Este tour rápido mostra tudo o que dá para fazer. 😉</p>`,
+    text: '<b>Bem-vindo à Minha Board! 👋</b><br><br>Vou te mostrar o básico em alguns passos. Você mesmo vai fazendo cada ação. É rápido!',
+    target: null, await: 'next', label: 'Começar',
   },
   {
-    icon: '📝',
-    title: 'Notas e tarefas',
-    html: `
-      <ul>
-        <li><b>Duplo clique</b> na board cria uma nota — ou use o <b>+</b> na barra à esquerda, ou a tecla <kbd>N</kbd>.</li>
-        <li><kbd>Enter</kbd> adiciona uma nova tarefa; clique no <b>☐</b> para marcá-la como feita.</li>
-        <li>Comece a linha com <b>-</b> para criar um título com marcador <b>•</b>.</li>
-        <li>Passe o mouse numa linha e arraste a alça <b>⠿</b> à esquerda para <b>reordenar</b> as tarefas.</li>
-      </ul>`,
+    text: 'Clique no botão <b>+</b> para criar a sua <b>primeira nota</b>.',
+    target: '#btn-add', await: 'note',
   },
   {
-    icon: '🧲',
-    title: 'Mover e organizar',
-    html: `
-      <ul>
-        <li><b>Arraste pelo topo</b> para mover; o <b>canto inferior direito</b> redimensiona.</li>
-        <li>Os cards se encaixam no grid e <b>empurram os vizinhos</b> — nada fica escondido embaixo.</li>
-        <li>No topo de cada nota: <b>✓</b> marca tudo, <b>⬤</b> muda a cor, <b>📥</b> conclui e guarda, <b>✕</b> exclui.</li>
-        <li>O botão <b>grade</b> na barra <b>auto-organiza</b> tudo de forma alinhada.</li>
-      </ul>`,
+    text: 'Pronto! 🎉 Essa é a sua nota.<br><br>Escreva uma tarefa e tecle <kbd>Enter</kbd> para adicionar outra. Quando quiser, é só seguir.',
+    target: null, await: 'next',
   },
   {
-    icon: '🔍',
-    title: 'Zoom e navegação',
-    html: `
-      <ul>
-        <li>A board é <b>infinita</b>: use a <b>roda do mouse</b> para dar zoom e <b>arraste o fundo vazio</b> para se deslocar.</li>
-        <li>O botão <b>enquadrar</b> (e o ⤢ no canto) mostra a <b>board completa</b> de uma vez.</li>
-        <li>Atalhos: <kbd>Ctrl</kbd>+<kbd>0</kbd> volta a 100%, <kbd>Ctrl</kbd>+<kbd>9</kbd> mostra tudo.</li>
-      </ul>`,
+    text: 'Agora crie uma <b>pasta</b> para organizar suas notas: clique no ícone de <b>pasta</b>.',
+    target: '#btn-new-folder', await: 'folder',
   },
   {
-    icon: '📁',
-    title: 'Pastas',
-    html: `
-      <ul>
-        <li>Crie uma pasta pelo ícone na barra e <b>arraste notas para dentro</b> dela.</li>
-        <li>Clique para abrir o painel flutuante (com rolagem se algo ficar fora da vista).</li>
-        <li>No cabeçalho: <b>⬤</b> dá uma <b>cor</b> à pasta, <b>✎</b> renomeia, <b>▾</b> fecha, <b>🗑</b> exclui.</li>
-      </ul>`,
+    text: 'Você pode ter <b>várias boards</b> (espaços separados).<br><br>Clique no <b>+</b> ao lado das abas, no topo, para criar outra.',
+    target: '.board-tab-add', await: 'board',
   },
   {
-    icon: '🗂️',
-    title: 'Várias boards',
-    html: `
-      <ul>
-        <li>No topo ficam as <b>abas</b>. O <b>+</b> cria uma nova board; cada uma é um espaço independente.</li>
-        <li><b>Duplo clique</b> na aba renomeia; o <b>✕</b> exclui (o conteúdo vai para a Lixeira).</li>
-        <li>Para <b>transferir</b> uma nota, pasta ou folha para outra board, <b>arraste-a até a aba</b> de destino.</li>
-      </ul>`,
+    text: 'Para navegar: gire a <b>roda do mouse</b> para dar zoom e <b>arraste o fundo</b> para se mover.<br><br>Este botão mostra a <b>board inteira</b> de uma vez.',
+    target: '#btn-fit', await: 'next',
   },
   {
-    icon: '✏️',
-    title: 'Desenho livre',
-    html: `
-      <ul>
-        <li>O <b>lápis</b> na barra ativa o desenho sobre a board inteira.</li>
-        <li>A <b>folha</b> cria um card branco de desenho, que você move e redimensiona como uma nota.</li>
-        <li>Ferramentas na barra inferior: caneta, borracha, formas, cores e espessura. <kbd>Ctrl</kbd>+<kbd>Z</kbd> desfaz.</li>
-      </ul>`,
+    text: 'Na <b>engrenagem</b> ficam o <b>tema</b>, o <b>backup</b> e as <b>atualizações</b> do app.',
+    target: '#btn-settings', await: 'next',
   },
   {
-    icon: '⚙️',
-    title: 'Segurança e ajustes',
-    html: `
-      <ul>
-        <li><b>Concluídos</b> guarda os cards finalizados — dá para restaurar depois.</li>
-        <li>O que você exclui vai para a <b>Lixeira</b> e pode ser recuperado.</li>
-        <li>Na <b>engrenagem</b> (Configurações) você escolhe o <b>tema</b>, faz <b>backup</b> (exportar/importar, cópia na nuvem) e verifica <b>atualizações</b>.</li>
-      </ul>
-      <p>Para rever este tour, clique no <b>❓</b> da barra à esquerda. Boas anotações! ✅</p>`,
+    text: '<b>Tudo pronto! ✅</b><br><br>Você já sabe o essencial. Para rever este tour quando quiser, clique no <b>❓</b> na barra à esquerda. Bom uso!',
+    target: null, await: 'done', label: 'Concluir',
   },
 ];
-let tutStep = 0;
+let guideStep = 0, guideActive = false, guideEls = null;
+function guideOn() { return guideActive; }
 
-function tutorialOpen() { return !tutorialEl.classList.contains('hidden'); }
-function renderTutorial() {
-  const s = TUT_STEPS[tutStep];
-  document.getElementById('tut-icon').textContent = s.icon;
-  document.getElementById('tut-title').textContent = s.title;
-  document.getElementById('tut-body').innerHTML = s.html;
-  const dots = document.getElementById('tut-dots');
-  dots.innerHTML = '';
-  TUT_STEPS.forEach((_, i) => {
-    const d = document.createElement('button');
-    d.className = 'tut-dot' + (i === tutStep ? ' active' : '');
-    d.title = `Passo ${i + 1}`;
-    d.addEventListener('click', () => { tutStep = i; renderTutorial(); });
-    dots.appendChild(d);
-  });
-  document.getElementById('tut-prev').style.visibility = tutStep === 0 ? 'hidden' : 'visible';
-  document.getElementById('tut-next').textContent =
-    tutStep === TUT_STEPS.length - 1 ? 'Começar 🚀' : 'Próximo →';
+function buildGuideEls() {
+  const spot = document.createElement('div'); spot.className = 'guide-spot';
+  const bubble = document.createElement('div'); bubble.className = 'guide-bubble';
+  const txt = document.createElement('div'); txt.className = 'guide-text';
+  const foot = document.createElement('div'); foot.className = 'guide-foot';
+  const count = document.createElement('span'); count.className = 'guide-count';
+  const nextBtn = document.createElement('button'); nextBtn.className = 'btn btn-primary guide-next';
+  foot.append(count, nextBtn);
+  bubble.append(txt, foot);
+  const skip = document.createElement('button'); skip.className = 'guide-skip';
+  skip.textContent = 'Pular tutorial ✕';
+  skip.addEventListener('click', () => endGuide(true));
+  nextBtn.addEventListener('click', guideNext);
+  document.body.append(spot, bubble, skip);
+  return { spot, bubble, txt, foot, count, nextBtn, skip };
 }
-function openTutorial() { tutStep = 0; renderTutorial(); tutorialEl.classList.remove('hidden'); }
-function closeTutorial() {
-  tutorialEl.classList.add('hidden');
-  try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch {}
+function positionGuide() {
+  const s = GUIDE_STEPS[guideStep];
+  const { spot, bubble } = guideEls;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const target = s.target ? document.querySelector(s.target) : null;
+  if (target) {
+    const r = target.getBoundingClientRect();
+    const pad = 6;
+    spot.classList.remove('no-target');
+    spot.style.left = (r.left - pad) + 'px';
+    spot.style.top = (r.top - pad) + 'px';
+    spot.style.width = (r.width + pad * 2) + 'px';
+    spot.style.height = (r.height + pad * 2) + 'px';
+    bubble.style.visibility = 'hidden'; bubble.style.left = '0px'; bubble.style.top = '0px';
+    const bw = bubble.offsetWidth, bh = bubble.offsetHeight;
+    let left = r.right + 16, top = r.top - 4;     // preferência: à direita do alvo
+    if (left + bw > vw - 12) { left = Math.min(r.left, vw - bw - 12); top = r.bottom + 16; } // senão, abaixo
+    left = Math.max(12, Math.min(left, vw - bw - 12));
+    top = Math.max(12, Math.min(top, vh - bh - 12));
+    bubble.style.left = left + 'px'; bubble.style.top = top + 'px';
+    bubble.style.visibility = 'visible';
+  } else {
+    // sem alvo: tela escurecida e bolha ao centro
+    spot.classList.add('no-target');
+    spot.style.left = (vw / 2) + 'px'; spot.style.top = (vh / 2) + 'px';
+    spot.style.width = '0px'; spot.style.height = '0px';
+    bubble.style.visibility = 'hidden';
+    const bw = bubble.offsetWidth, bh = bubble.offsetHeight;
+    bubble.style.left = Math.round((vw - bw) / 2) + 'px';
+    bubble.style.top = Math.round((vh - bh) / 2) + 'px';
+    bubble.style.visibility = 'visible';
+  }
 }
-document.getElementById('tut-close').addEventListener('click', closeTutorial);
-document.getElementById('tut-prev').addEventListener('click', () => {
-  if (tutStep > 0) { tutStep--; renderTutorial(); }
-});
-document.getElementById('tut-next').addEventListener('click', () => {
-  if (tutStep < TUT_STEPS.length - 1) { tutStep++; renderTutorial(); }
-  else closeTutorial();
-});
-document.getElementById('btn-help').addEventListener('click', openTutorial);
-// clique no fundo escuro fecha; Esc fecha; setas navegam
-tutorialEl.addEventListener('mousedown', (e) => { if (e.target === tutorialEl) closeTutorial(); });
+function renderGuide() {
+  const s = GUIDE_STEPS[guideStep];
+  guideEls.txt.innerHTML = s.text;
+  guideEls.count.textContent = `${guideStep + 1} / ${GUIDE_STEPS.length}`;
+  const manual = s.await === 'next' || s.await === 'done';
+  guideEls.nextBtn.style.display = manual ? '' : 'none';
+  guideEls.nextBtn.textContent = s.label || (s.await === 'done' ? 'Concluir' : 'Próximo →');
+  positionGuide();
+}
+function startGuide() {
+  guideActive = true; guideStep = 0;
+  if (!guideEls) guideEls = buildGuideEls();
+  guideEls.spot.style.display = 'block';
+  guideEls.bubble.style.display = 'flex';
+  guideEls.skip.style.display = 'flex';
+  renderGuide();
+}
+function guideNext() {
+  if (!guideActive) return;
+  if (guideStep >= GUIDE_STEPS.length - 1) { endGuide(true); return; }
+  guideStep++; renderGuide();
+}
+// Chamada pelos pontos de criação (nota/pasta/board) para avançar o passo certo.
+function guideNotify(action) {
+  if (!guideActive) return;
+  if (GUIDE_STEPS[guideStep] && GUIDE_STEPS[guideStep].await === action) {
+    setTimeout(guideNext, 400); // deixa a ação renderizar antes de avançar
+  }
+}
+function endGuide(commit) {
+  guideActive = false;
+  if (guideEls) {
+    guideEls.spot.style.display = 'none';
+    guideEls.bubble.style.display = 'none';
+    guideEls.skip.style.display = 'none';
+  }
+  if (commit) { try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch {} }
+}
+document.getElementById('btn-help').addEventListener('click', () => { endGuide(false); startGuide(); });
+window.addEventListener('resize', () => { if (guideActive) positionGuide(); });
 document.addEventListener('keydown', (e) => {
-  if (!tutorialOpen()) return;
-  if (e.key === 'Escape') { e.preventDefault(); closeTutorial(); }
-  else if (e.key === 'ArrowRight') { e.preventDefault(); document.getElementById('tut-next').click(); }
-  else if (e.key === 'ArrowLeft') { e.preventDefault(); document.getElementById('tut-prev').click(); }
+  if (guideActive && e.key === 'Escape') { e.preventDefault(); endGuide(true); }
 });
 
 window.addEventListener('resize', () => {
@@ -2099,6 +2104,7 @@ function addBoard() {
   loadBoard(b);
   renderTabs();
   save();
+  guideNotify('board');
 }
 function deleteBoard(id) {
   if (boards.length <= 1) return; // sempre ao menos uma board
@@ -2309,8 +2315,8 @@ function applyState(saved) {
 
 async function init() {
   applyState(await load());
-  // primeira abertura neste computador: mostra o tutorial
-  try { if (!localStorage.getItem(TUTORIAL_KEY)) openTutorial(); } catch {}
+  // primeira abertura (ou após atualização do tutorial): inicia o tour guiado
+  try { if (!localStorage.getItem(TUTORIAL_KEY)) setTimeout(startGuide, 600); } catch {}
 }
 
 init();
