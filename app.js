@@ -1597,7 +1597,7 @@ function openColorPop(entry, btn, applyFn) {
 function hideColorPop() { colorPop.classList.add('hidden'); colorPopEntry = null; colorPopApply = null; }
 document.addEventListener('mousedown', (e) => {
   if (colorPop.classList.contains('hidden')) return;
-  if (!e.target.closest('.color-pop') && !e.target.closest('.note-color') && !e.target.closest('.folder-color')) hideColorPop();
+  if (!e.target.closest('.color-pop') && !e.target.closest('.note-color') && !e.target.closest('.folder-color') && !e.target.closest('.board-color-btn')) hideColorPop();
 });
 
 // ---------- Barra de ferramentas de desenho ----------
@@ -1797,6 +1797,8 @@ function applyTheme() {
   // repinta tudo que usa cores calculadas em JS (paleta dos cards por tema)
   buildColorPop();
   renderAll();
+  renderTabs();              // re-tinge as abas com a paleta do tema
+  applyActiveBoardColor();   // re-pinta o fundo da board ativa
   renderArchive();
   renderTrash();
 }
@@ -1930,6 +1932,10 @@ const GUIDE_STEPS = [
     target: '.board-tab-add', await: 'board',
   },
   {
+    text: 'Dê uma <b>cor</b> a cada board! 🎨 Clique aqui para escolher uma cor sugerida ou personalizada — o fundo da board e a aba mudam juntos.',
+    target: '.board-color-btn', await: 'next',
+  },
+  {
     text: 'Para navegar: gire a <b>roda do mouse</b> para dar zoom e <b>arraste o fundo</b> para se mover.<br><br>Este botão mostra a <b>board inteira</b> de uma vez.',
     target: '#btn-fit', await: 'next',
   },
@@ -1942,7 +1948,19 @@ const GUIDE_STEPS = [
     target: null, await: 'done', label: 'Concluir',
   },
 ];
+
+// "Novidades": mini-tour mostrado só a quem já fez o tutorial completo, quando
+// uma atualização traz uma feature nova. Cada novidade tem sua própria chave.
+const NEWS_KEY = 'minha-board:novidade:cor-da-board';
+const NEWS_STEPS = [
+  {
+    text: '<b>Novidade! 🎨</b><br><br>Agora dá para mudar a <b>cor de cada board</b>. Clique aqui para escolher uma cor sugerida ou personalizada — o fundo e a aba mudam juntos.',
+    target: '.board-color-btn', await: 'next', label: 'Entendi!',
+  },
+];
+
 let guideStep = 0, guideActive = false, guideEls = null;
+let guideSteps = GUIDE_STEPS, guideKey = TUTORIAL_KEY;
 function guideOn() { return guideActive; }
 
 function buildGuideEls() {
@@ -1962,7 +1980,7 @@ function buildGuideEls() {
   return { spot, bubble, txt, foot, count, nextBtn, skip };
 }
 function positionGuide() {
-  const s = GUIDE_STEPS[guideStep];
+  const s = guideSteps[guideStep];
   const { spot, bubble } = guideEls;
   const vw = window.innerWidth, vh = window.innerHeight;
   const target = s.target ? document.querySelector(s.target) : null;
@@ -1995,31 +2013,35 @@ function positionGuide() {
   }
 }
 function renderGuide() {
-  const s = GUIDE_STEPS[guideStep];
+  const s = guideSteps[guideStep];
   guideEls.txt.innerHTML = s.text;
-  guideEls.count.textContent = `${guideStep + 1} / ${GUIDE_STEPS.length}`;
+  // conta os passos só no tour completo (no mini-tour de novidade fica limpo)
+  guideEls.count.textContent = guideSteps.length > 1 ? `${guideStep + 1} / ${guideSteps.length}` : '';
   const manual = s.await === 'next' || s.await === 'done';
   guideEls.nextBtn.style.display = manual ? '' : 'none';
   guideEls.nextBtn.textContent = s.label || (s.await === 'done' ? 'Concluir' : 'Próximo →');
+  // "Pular tutorial" só faz sentido no tour completo
+  guideEls.skip.style.display = guideSteps.length > 1 ? 'flex' : 'none';
   positionGuide();
 }
-function startGuide() {
+function startGuide(steps, key) {
+  guideSteps = steps || GUIDE_STEPS;
+  guideKey = key || TUTORIAL_KEY;
   guideActive = true; guideStep = 0;
   if (!guideEls) guideEls = buildGuideEls();
   guideEls.spot.style.display = 'block';
   guideEls.bubble.style.display = 'flex';
-  guideEls.skip.style.display = 'flex';
   renderGuide();
 }
 function guideNext() {
   if (!guideActive) return;
-  if (guideStep >= GUIDE_STEPS.length - 1) { endGuide(true); return; }
+  if (guideStep >= guideSteps.length - 1) { endGuide(true); return; }
   guideStep++; renderGuide();
 }
 // Chamada pelos pontos de criação (nota/pasta/board) para avançar o passo certo.
 function guideNotify(action) {
   if (!guideActive) return;
-  if (GUIDE_STEPS[guideStep] && GUIDE_STEPS[guideStep].await === action) {
+  if (guideSteps[guideStep] && guideSteps[guideStep].await === action) {
     setTimeout(guideNext, 400); // deixa a ação renderizar antes de avançar
   }
 }
@@ -2030,9 +2052,15 @@ function endGuide(commit) {
     guideEls.bubble.style.display = 'none';
     guideEls.skip.style.display = 'none';
   }
-  if (commit) { try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch {} }
+  if (commit) {
+    try {
+      localStorage.setItem(guideKey, '1');
+      // quem completa o tour inteiro já viu a cor da board: não repetir a novidade
+      if (guideKey === TUTORIAL_KEY) localStorage.setItem(NEWS_KEY, '1');
+    } catch {}
+  }
 }
-document.getElementById('btn-help').addEventListener('click', () => { endGuide(false); startGuide(); });
+document.getElementById('btn-help').addEventListener('click', () => { endGuide(false); startGuide(GUIDE_STEPS, TUTORIAL_KEY); });
 window.addEventListener('resize', () => { if (guideActive) positionGuide(); });
 document.addEventListener('keydown', (e) => {
   if (guideActive && e.key === 'Escape') { e.preventDefault(); endGuide(true); }
@@ -2050,12 +2078,40 @@ function normalizeBoard(b) {
   return {
     id: b.id || uid('b'),
     name: b.name || 'Board',
+    color: (b.color != null) ? b.color : null,       // índice da paleta
+    customColor: b.customColor || null,               // cor personalizada (hex)
     folders: Array.isArray(b.folders) ? b.folders : [],
     notes: Array.isArray(b.notes) ? b.notes : [],
     sheets: Array.isArray(b.sheets) ? b.sheets : [],
     boardDrawing: Array.isArray(b.boardDrawing) ? b.boardDrawing : [],
     view: (v && typeof v.zoom === 'number') ? { zoom: v.zoom, panX: v.panX || 0, panY: v.panY || 0 } : { zoom: 1, panX: 0, panY: 0 },
   };
+}
+// Pinta o fundo da board ativa conforme a cor escolhida (ou volta ao padrão).
+function applyActiveBoardColor() {
+  const b = boards.find((x) => x.id === activeBoardId);
+  const boardEl = document.getElementById('board');
+  if (!boardEl) return;
+  if (b && (b.customColor || b.color != null)) {
+    boardEl.style.backgroundColor = resolveColors(b).bg;
+  } else {
+    boardEl.style.backgroundColor = '';
+  }
+}
+// Aplica a cor da board a uma aba (fundo + contraste do texto).
+function tabColorStyle(tab, b) {
+  if (b.customColor || b.color != null) {
+    const { bg, bg2, light } = resolveColors(b);
+    tab.style.background = `linear-gradient(160deg, ${bg2}, ${bg})`;
+    tab.style.borderColor = bg2;
+    tab.style.setProperty('--tab-ink', light ? '#15171c' : 'rgba(255, 255, 255, 0.95)');
+    tab.classList.add('colored');
+  } else {
+    tab.style.background = '';
+    tab.style.borderColor = '';
+    tab.style.removeProperty('--tab-ink');
+    tab.classList.remove('colored');
+  }
 }
 // Grava o estado atual (variáveis vivas) de volta no objeto da board ativa.
 function syncActiveBoard() {
@@ -2085,6 +2141,7 @@ function loadBoard(b) {
   renderAll();
   const v = b.view || { zoom: 1, panX: 0, panY: 0 };
   setView(v.zoom, v.panX, v.panY, false);
+  applyActiveBoardColor();
 }
 function switchBoard(id) {
   if (id === activeBoardId) return;
@@ -2169,6 +2226,7 @@ function renderTabs() {
     name.className = 'board-tab-name';
     name.textContent = b.name;
     tab.appendChild(name);
+    tabColorStyle(tab, b); // tinge a aba conforme a cor da board
     tab.addEventListener('click', () => switchBoard(b.id));
     tab.addEventListener('dblclick', (e) => { e.stopPropagation(); renameBoard(b.id); });
     if (boards.length > 1) {
@@ -2187,6 +2245,22 @@ function renderTabs() {
   add.textContent = '+';
   add.addEventListener('click', addBoard);
   wrap.appendChild(add);
+  // botão de cor da board ativa
+  const colorBtn = document.createElement('button');
+  colorBtn.className = 'board-color-btn';
+  colorBtn.title = 'Cor desta board';
+  colorBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z"/></svg>';
+  colorBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const b = boards.find((x) => x.id === activeBoardId);
+    if (!b) return;
+    openColorPop({ data: b }, colorBtn, () => {
+      applyActiveBoardColor();
+      const activeTab = document.querySelector('.board-tab.active');
+      if (activeTab) tabColorStyle(activeTab, b);
+    });
+  });
+  wrap.appendChild(colorBtn);
 }
 
 // Id da board cuja aba está sob o ponto (x,y) na tela, ou null.
@@ -2315,8 +2389,15 @@ function applyState(saved) {
 
 async function init() {
   applyState(await load());
-  // primeira abertura (ou após atualização do tutorial): inicia o tour guiado
-  try { if (!localStorage.getItem(TUTORIAL_KEY)) setTimeout(startGuide, 600); } catch {}
+  try {
+    if (!localStorage.getItem(TUTORIAL_KEY)) {
+      // nunca fez o tour: mostra o tutorial completo (já inclui a cor da board)
+      setTimeout(() => startGuide(GUIDE_STEPS, TUTORIAL_KEY), 600);
+    } else if (!localStorage.getItem(NEWS_KEY)) {
+      // já fez o tour, mas ainda não viu esta novidade: mostra só ela
+      setTimeout(() => startGuide(NEWS_STEPS, NEWS_KEY), 600);
+    }
+  } catch {}
 }
 
 init();
