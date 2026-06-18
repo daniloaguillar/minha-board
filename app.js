@@ -23,6 +23,7 @@ const canvas = document.getElementById('canvas');
 const board = document.getElementById('board');
 const noteTpl = document.getElementById('note-template');
 const sheetTpl = document.getElementById('sheet-template');
+const imageTpl = document.getElementById('image-template');
 const itemTpl = document.getElementById('item-template');
 const folderClosedTpl = document.getElementById('folder-closed-template');
 const folderOpenTpl = document.getElementById('folder-open-template');
@@ -33,6 +34,8 @@ const emptyState = document.getElementById('empty-state');
 const notes = new Map();
 /** Folhas renderizadas. @type {Map<string,{el,data,canvas,ctx}>} */
 const sheets = new Map();
+/** Imagens renderizadas. @type {Map<string,{el,data,img}>} */
+const images = new Map();
 /** Pastas renderizadas. @type {Map<string,{el,data,bodyEl}>} */
 const folderEntries = new Map();
 
@@ -40,6 +43,8 @@ const folderEntries = new Map();
 let allNotes = [];
 /** Dados de todas as folhas. @type {object[]} */
 let allSheets = [];
+/** Dados de todas as imagens. @type {object[]} */
+let allImages = [];
 /** Pastas. @type {{id,name,x,y,z,open,w,h}[]} */
 let folders = [];
 /** Notas concluídas. @type {object[]} */
@@ -255,6 +260,7 @@ function fitToContent() {
 function topLevelCount() {
   return allNotes.filter((n) => !n.folderId).length
     + allSheets.filter((s) => !s.folderId).length
+    + allImages.filter((i) => !i.folderId).length
     + folders.length;
 }
 function updateEmptyState() {
@@ -520,7 +526,7 @@ function addOrFocusTask(entry) {
 }
 
 // ---------- Redimensionamento genérico ----------
-function makeBoxResizable(handle, el, o, onResize) {
+function makeBoxResizable(handle, el, o, onResize, aspect) {
   handle.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
     e.preventDefault(); e.stopPropagation();
@@ -530,8 +536,16 @@ function makeBoxResizable(handle, el, o, onResize) {
     const onMove = (ev) => {
       // o cursor anda em px de tela; converte o deslocamento para o mundo (÷ zoom).
       // mundo livre / pasta com scroll: cresce sem teto.
-      o.w = clamp(snap(origW + (ev.clientX - startX) / zoom), MIN_W, Infinity);
-      o.h = clamp(snap(origH + (ev.clientY - startY) / zoom), MIN_H, Infinity);
+      let w = clamp(snap(origW + (ev.clientX - startX) / zoom), MIN_W, Infinity);
+      let h;
+      if (aspect) {
+        // mantém a proporção da imagem: a altura deriva da largura (sem distorcer)
+        h = Math.round(w / aspect);
+        if (h < MIN_H) { h = MIN_H; w = Math.round(h * aspect); }
+      } else {
+        h = clamp(snap(origH + (ev.clientY - startY) / zoom), MIN_H, Infinity);
+      }
+      o.w = w; o.h = h;
       el.style.width = o.w + 'px';
       el.style.height = o.h + 'px';
       pushItems(o); // empurra vizinhos em vez de cobrir
@@ -557,6 +571,7 @@ function itemsIn(folderId) {
   const list = [];
   notes.forEach((e) => { if ((e.data.folderId || null) === fid) list.push({ o: e.data, el: e.el, kind: 'note', entry: e }); });
   sheets.forEach((e) => { if ((e.data.folderId || null) === fid) list.push({ o: e.data, el: e.el, kind: 'sheet', entry: e }); });
+  images.forEach((e) => { if ((e.data.folderId || null) === fid) list.push({ o: e.data, el: e.el, kind: 'image', entry: e }); });
   if (!fid) folderEntries.forEach((fe) => list.push({ o: fe.data, el: fe.el, kind: 'folder', entry: fe }));
   return list;
 }
@@ -567,7 +582,7 @@ function itemRect(it) {
 }
 function applyItemPos(it) {
   if (it.kind === 'note') applyToneAndPos(it.el, it.o);
-  else if (it.kind === 'sheet') applyPos(it.el, it.o);
+  else if (it.kind === 'sheet' || it.kind === 'image') applyPos(it.el, it.o);
   else applyFolderPos(it.entry);
 }
 function rectsOverlap(a, b) {
@@ -699,7 +714,7 @@ function makeItemDraggable(el, entry, dragFromSel, ignoreSel, onClick) {
       if (lifted) {
         const destTabId = tabAt(ev.clientX, ev.clientY);
         if (destTabId && destTabId !== activeBoardId) {
-          moveItemToBoard(entry.canvas ? 'sheet' : 'note', entry.data, destTabId);
+          moveItemToBoard(entry.img ? 'image' : entry.canvas ? 'sheet' : 'note', entry.data, destTabId);
         } else {
           dropItem(entry, ev.clientX, ev.clientY);
         }
@@ -765,8 +780,8 @@ function placeBack(entry, containerEl) {
   el.style.position = '';
   el.style.margin = '';
   (containerEl || canvas).appendChild(el);
-  if (entry.canvas) applyPos(el, entry.data); // folha
-  else applyToneAndPos(el, entry.data);       // nota
+  if (entry.canvas || entry.img) applyPos(el, entry.data); // folha / imagem
+  else applyToneAndPos(el, entry.data);                    // nota
 }
 
 // ---------- Desenho: helpers de canvas ----------
@@ -994,9 +1009,120 @@ function addSheet() {
   updateDrawToolbar(); updateEmptyState(); save();
 }
 
+// ---------- Imagens (cards de imagem na board) ----------
+function normalizeImage(data) {
+  data.id = data.id || uid('img');
+  data.x = snap(data.x ?? 60);
+  data.y = snap(data.y ?? 60);
+  data.w = snap(data.w ?? 300);
+  data.h = snap(data.h ?? 220);
+  data.z = data.z ?? nextZ();
+  if (data.folderId === undefined) data.folderId = null;
+  data.src = data.src || '';
+  // proporção (largura/altura) — mantida ao redimensionar
+  if (!data.aspect || !isFinite(data.aspect)) data.aspect = (data.w && data.h) ? data.w / data.h : 1;
+  clampBox(data);
+  return data;
+}
+function createImage(data, container) {
+  const im = normalizeImage(data);
+  const el = imageTpl.content.firstElementChild.cloneNode(true);
+  el.dataset.id = im.id;
+  applyPos(el, im);
+  el.querySelector('.image-img').src = im.src;
+  const entry = { el, data: im, img: true };
+  el.addEventListener('mousedown', () => bringToFront(im, el));
+  el.querySelector('.image-del').addEventListener('click', (e) => { e.stopPropagation(); trashItem('image', entry); });
+  makeItemDraggable(el, entry, null, '.image-del, .image-resize');
+  makeBoxResizable(el.querySelector('.image-resize'), el, im, null, im.aspect);
+  (container || canvas).appendChild(el);
+  images.set(im.id, entry);
+  return entry;
+}
+// Cria um card de imagem a partir de um arquivo (seletor, arrastar-soltar ou colar).
+// Se wx/wy forem dados, posiciona ali (mundo); senão, no centro da viewport.
+function addImageFromFile(file, wx, wy) {
+  if (!file || !/^image\//.test(file.type || '')) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const probe = new Image();
+    probe.onload = () => {
+      const nw = probe.naturalWidth || 800, nh = probe.naturalHeight || 600;
+      const aspect = nw / nh;
+      // reduz para no máx. 1600px (economiza espaço no arquivo de notas)
+      const maxDim = 1600;
+      const scale = Math.min(1, maxDim / Math.max(nw, nh));
+      const cw = Math.max(1, Math.round(nw * scale)), ch = Math.max(1, Math.round(nh * scale));
+      const cnv = document.createElement('canvas');
+      cnv.width = cw; cnv.height = ch;
+      cnv.getContext('2d').drawImage(probe, 0, 0, cw, ch);
+      const type = (file.type === 'image/png' || file.type === 'image/webp' || file.type === 'image/gif') ? 'image/png' : 'image/jpeg';
+      let src;
+      try { src = cnv.toDataURL(type, 0.85); } catch { src = reader.result; }
+      // tamanho de exibição: lado maior ~360px, respeitando mínimos, mantendo a proporção
+      let w, h;
+      if (nw >= nh) { w = 360; h = 360 / aspect; } else { h = 360; w = 360 * aspect; }
+      if (w < MIN_W) { w = MIN_W; h = w / aspect; }
+      if (h < MIN_H) { h = MIN_H; w = h * aspect; }
+      w = snap(w); h = Math.round(w / aspect);
+      const c = (wx == null) ? viewportCenterWorld() : { x: wx, y: wy };
+      const data = { x: snap(Math.max(0, c.x - w / 2)), y: snap(Math.max(0, c.y - h / 2)), w, h, aspect, folderId: null, src };
+      allImages.push(data);
+      const entry = createImage(data, canvas);
+      bringToFront(data, entry.el);
+      pushItems(data);
+      updateEmptyState(); save();
+    };
+    probe.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+// Botão da barra: abre o seletor de arquivo.
+function addImage() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.addEventListener('change', () => addImageFromFile(input.files && input.files[0], null, null));
+  input.click();
+}
+// Arrastar imagem(ns) de fora para dentro do app
+window.addEventListener('dragover', (e) => {
+  if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { e.preventDefault(); document.body.classList.add('drag-over'); }
+});
+window.addEventListener('dragleave', (e) => {
+  if (e.relatedTarget === null) document.body.classList.remove('drag-over');
+});
+window.addEventListener('drop', (e) => {
+  const files = e.dataTransfer && e.dataTransfer.files;
+  if (!files || !files.length) return;
+  e.preventDefault();
+  document.body.classList.remove('drag-over');
+  if (drawMode) return;
+  const w = clientToWorld(e.clientX, e.clientY);
+  let n = 0;
+  [...files].forEach((f) => {
+    if (/^image\//.test(f.type || '')) { addImageFromFile(f, w.x + n * 24, w.y + n * 24); n++; }
+  });
+});
+// Colar imagem (Ctrl+V) — ex.: prints da área de transferência
+window.addEventListener('paste', (e) => {
+  if (!e.clipboardData) return;
+  const items = [...e.clipboardData.items || []];
+  const imgItem = items.find((it) => it.kind === 'file' && /^image\//.test(it.type));
+  if (!imgItem) return; // sem imagem: deixa o colar normal (texto em notas) seguir
+  const file = imgItem.getAsFile();
+  if (!file) return;
+  e.preventDefault();
+  addImageFromFile(file, null, null);
+});
+
 // ---------- Pastas ----------
 function folderItems(id) {
-  return [...allNotes.filter((n) => n.folderId === id), ...allSheets.filter((s) => s.folderId === id)];
+  return [
+    ...allNotes.filter((n) => n.folderId === id),
+    ...allSheets.filter((s) => s.folderId === id),
+    ...allImages.filter((i) => i.folderId === id),
+  ];
 }
 function clampFolder(f) {
   // mundo livre (1º quadrante): só garante tamanho mínimo e coords não-negativas
@@ -1059,7 +1185,10 @@ function buildMiniPreview(miniEl, id) {
   shown.forEach((it) => {
     const tile = document.createElement('div');
     tile.className = 'mini-tile';
-    if (it.strokes !== undefined) { tile.classList.add('sheet'); }
+    if (it.src !== undefined) { // imagem
+      tile.classList.add('image');
+      tile.style.backgroundImage = `url("${it.src}")`;
+    } else if (it.strokes !== undefined) { tile.classList.add('sheet'); }
     else { tile.style.background = resolveColors(it).bg2; }
     miniEl.appendChild(tile);
   });
@@ -1182,6 +1311,7 @@ function deleteFolder(id) {
   // itens voltam para a board (soltos)
   allNotes.forEach((n) => { if (n.folderId === id) { n.folderId = null; n.x = snap(40 + Math.random() * 80); n.y = snap(40 + Math.random() * 80); n.z = nextZ(); } });
   allSheets.forEach((s) => { if (s.folderId === id) { s.folderId = null; s.x = snap(40 + Math.random() * 80); s.y = snap(40 + Math.random() * 80); s.z = nextZ(); } });
+  allImages.forEach((i) => { if (i.folderId === id) { i.folderId = null; i.x = snap(40 + Math.random() * 80); i.y = snap(40 + Math.random() * 80); i.z = nextZ(); } });
   folders = folders.filter((x) => x.id !== id);
   renderAll(); save();
 }
@@ -1282,17 +1412,20 @@ function makeFolderDraggable(el, f, dragFromSel, ignoreSel, onClick) {
 function renderAll() {
   notes.forEach((e) => e.el.remove()); notes.clear();
   sheets.forEach((e) => e.el.remove()); sheets.clear();
+  images.forEach((e) => e.el.remove()); images.clear();
   folderEntries.forEach((e) => e.el.remove()); folderEntries.clear();
   activeSheet = null;
 
   folders.forEach((f) => createFolder(f));
   allNotes.filter((n) => !n.folderId).forEach((n) => createNote(n, canvas));
   allSheets.filter((s) => !s.folderId).forEach((s) => createSheet(s, canvas));
+  allImages.filter((i) => !i.folderId).forEach((i) => createImage(i, canvas));
   folders.filter((f) => f.open).forEach((f) => {
     const fe = folderEntries.get(f.id);
     if (!fe || !fe.bodyEl) return;
     allNotes.filter((n) => n.folderId === f.id).forEach((n) => createNote(n, fe.bodyEl));
     allSheets.filter((s) => s.folderId === f.id).forEach((s) => createSheet(s, fe.bodyEl));
+    allImages.filter((i) => i.folderId === f.id).forEach((i) => createImage(i, fe.bodyEl));
   });
   activeSheet = sheets.values().next().value || null;
 
@@ -1309,6 +1442,7 @@ function reflow() {
   folderEntries.forEach((fe) => { clampFolder(fe.data); applyFolderPos(fe); });
   notes.forEach((e) => { clampBox(e.data); applyToneAndPos(e.el, e.data); });
   sheets.forEach((e) => { clampBox(e.data); applyPos(e.el, e.data); sizeSheetCanvas(e); });
+  images.forEach((e) => { clampBox(e.data); applyPos(e.el, e.data); });
 }
 
 // ---------- Cards concluídos ----------
@@ -1408,6 +1542,9 @@ function trashItem(kind, entry) {
     allSheets = allSheets.filter((s) => s.id !== data.id);
     sheets.delete(data.id);
     if (activeSheet === entry) activeSheet = sheets.values().next().value || null;
+  } else if (kind === 'image') {
+    allImages = allImages.filter((i) => i.id !== data.id);
+    images.delete(data.id);
   } else {
     allNotes = allNotes.filter((n) => n.id !== data.id);
     notes.delete(data.id);
@@ -1424,7 +1561,9 @@ function restoreTrash(idx) {
   delete data.deletedAt;
   data.z = nextZ();
   data.folderId = (t.fromFolderId && folders.some((f) => f.id === t.fromFolderId)) ? t.fromFolderId : null;
-  if (t.kind === 'sheet') allSheets.push(data); else allNotes.push(data);
+  if (t.kind === 'sheet') allSheets.push(data);
+  else if (t.kind === 'image') allImages.push(data);
+  else allNotes.push(data);
   renderAll();
   pushItems(data);
   renderTrash(); updateTrashCount(); save();
@@ -1448,6 +1587,7 @@ function updateTrashCount() {
 }
 function trashSummary(t) {
   if (t.kind === 'sheet') return 'Folha de desenho';
+  if (t.kind === 'image') return 'Imagem';
   return noteSummary(t.data);
 }
 function renderTrash() {
@@ -1457,10 +1597,11 @@ function renderTrash() {
     const card = document.createElement('div');
     card.className = 'archive-item';
     if (t.kind === 'sheet') card.style.borderLeftColor = '#cfd3da';
+    else if (t.kind === 'image') card.style.borderLeftColor = '#9aa0aa';
     else card.style.borderLeftColor = resolveColors(t.data).bg2;
 
     const h = document.createElement('h4');
-    h.textContent = (t.kind === 'sheet' ? '🎨 ' : '') + trashSummary(t);
+    h.textContent = (t.kind === 'sheet' ? '🎨 ' : t.kind === 'image' ? '🖼 ' : '') + trashSummary(t);
     card.appendChild(h);
 
     if (t.kind === 'note') {
@@ -1475,6 +1616,10 @@ function renderTrash() {
         });
         card.appendChild(ul);
       }
+    } else if (t.kind === 'image') {
+      const im = document.createElement('img');
+      im.className = 'trash-thumb'; im.src = t.data.src || '';
+      card.appendChild(im);
     } else {
       const info = document.createElement('div');
       info.className = 'task-row muted';
@@ -1646,6 +1791,7 @@ document.getElementById('draw-clear').addEventListener('click', () => {
 document.getElementById('draw-done').addEventListener('click', () => setDrawMode(false));
 document.getElementById('btn-draw').addEventListener('click', () => setDrawMode(!drawMode));
 document.getElementById('btn-sheet').addEventListener('click', addSheet);
+document.getElementById('btn-image').addEventListener('click', addImage);
 document.getElementById('btn-new-folder').addEventListener('click', addFolder);
 document.getElementById('btn-arrange').addEventListener('click', autoArrange);
 buildDrawColors();
@@ -1758,34 +1904,41 @@ if (isDesktop) {
   });
   if (window.boardAPI.onUpdate) {
     window.boardAPI.onUpdate((ch, data) => {
-      if (ch === 'update:available') updStatus.textContent = `Baixando a versão ${data.version}…`;
+      if (ch === 'update:available') { updStatus.textContent = `Baixando a versão ${data.version}…`; showUpdateToast('downloading', data); }
       else if (ch === 'update:none') updStatus.textContent = 'Você já está na versão mais recente. ✅';
       else if (ch === 'update:error') updStatus.textContent = 'Falha ao verificar atualização.';
-      else if (ch === 'update:progress') updStatus.textContent = `Baixando atualização… ${data.percent}%`;
-      else if (ch === 'update:downloaded') {
-        updStatus.textContent = `Versão ${data.version} pronta. Reinicie para aplicar.`;
-        showUpdateToast(data.version);
-      }
+      else if (ch === 'update:progress') { updStatus.textContent = `Baixando atualização… ${data.percent}%`; showUpdateToast('downloading', data); }
+      else if (ch === 'update:downloaded') { updStatus.textContent = `Versão ${data.version} pronta. Reinicie para aplicar.`; showUpdateToast('downloaded', data); }
     });
   }
 }
 
-// Aviso flutuante quando uma atualização foi baixada e está pronta para instalar
-function showUpdateToast(version) {
-  if (document.getElementById('update-toast')) return;
-  const t = document.createElement('div');
-  t.id = 'update-toast';
-  t.className = 'update-toast';
+// Aviso flutuante de atualização. Aparece já ao DETECTAR (baixando) e vira
+// acionável quando a nova versão está pronta para instalar.
+function showUpdateToast(state, data) {
+  let t = document.getElementById('update-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'update-toast';
+    t.className = 'update-toast';
+    document.body.appendChild(t);
+  }
+  t.innerHTML = '';
   const label = document.createElement('span');
-  label.textContent = `🎉 Atualização ${version ? 'v' + version + ' ' : ''}pronta!`;
-  const now = document.createElement('button');
-  now.className = 'btn btn-primary'; now.textContent = 'Reiniciar e atualizar';
-  now.addEventListener('click', () => window.boardAPI.installUpdate());
-  const later = document.createElement('button');
-  later.className = 'btn btn-ghost'; later.textContent = 'Depois';
-  later.addEventListener('click', () => t.remove());
-  t.append(label, now, later);
-  document.body.appendChild(t);
+  if (state === 'downloaded') {
+    label.textContent = `🎉 Atualização ${data && data.version ? 'v' + data.version + ' ' : ''}pronta!`;
+    const now = document.createElement('button');
+    now.className = 'btn btn-primary'; now.textContent = 'Reiniciar e atualizar';
+    now.addEventListener('click', () => window.boardAPI.installUpdate());
+    const later = document.createElement('button');
+    later.className = 'btn btn-ghost'; later.textContent = 'Depois';
+    later.addEventListener('click', () => t.remove());
+    t.append(label, now, later);
+  } else { // baixando
+    const pct = (data && data.percent != null) ? ` ${data.percent}%` : '…';
+    label.textContent = `⬇️ Baixando atualização${pct}`;
+    t.append(label);
+  }
 }
 
 // ---------- Configurações: tema ----------
@@ -1856,7 +2009,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---------- Pan (arrastar o fundo) e zoom (roda do mouse) ----------
-const PANNABLE_IGNORE = '.note, .sheet, .folder, .zoom-hud, .draw-toolbar, .color-pop, .archive, .tutorial-overlay, .board-tabs';
+const PANNABLE_IGNORE = '.note, .sheet, .image-card, .folder, .zoom-hud, .draw-toolbar, .color-pop, .archive, .tutorial-overlay, .board-tabs';
 function updateZoomHud() {
   const el = document.getElementById('zoom-level');
   if (el) el.textContent = Math.round(zoom * 100) + '%';
@@ -1936,6 +2089,10 @@ const GUIDE_STEPS = [
     target: '.board-color-btn', await: 'next',
   },
   {
+    text: 'Você também pode <b>adicionar imagens</b> à board: clique aqui, escolha um arquivo, e arraste/redimensione como quiser. 🖼️',
+    target: '#btn-image', await: 'next',
+  },
+  {
     text: 'Para navegar: gire a <b>roda do mouse</b> para dar zoom e <b>arraste o fundo</b> para se mover.<br><br>Este botão mostra a <b>board inteira</b> de uma vez.',
     target: '#btn-fit', await: 'next',
   },
@@ -1951,11 +2108,11 @@ const GUIDE_STEPS = [
 
 // "Novidades": mini-tour mostrado só a quem já fez o tutorial completo, quando
 // uma atualização traz uma feature nova. Cada novidade tem sua própria chave.
-const NEWS_KEY = 'minha-board:novidade:cor-da-board';
+const NEWS_KEY = 'minha-board:novidade:imagens';
 const NEWS_STEPS = [
   {
-    text: '<b>Novidade! 🎨</b><br><br>Agora dá para mudar a <b>cor de cada board</b>. Clique aqui para escolher uma cor sugerida ou personalizada — o fundo e a aba mudam juntos.',
-    target: '.board-color-btn', await: 'next', label: 'Entendi!',
+    text: '<b>Novidade! 🖼️</b><br><br>Agora dá para <b>adicionar imagens</b> à board. Clique aqui, escolha um arquivo e arraste/redimensione como quiser. (Os ícones também ficaram mais bonitos! ✨)',
+    target: '#btn-image', await: 'next', label: 'Entendi!',
   },
 ];
 
@@ -2083,6 +2240,7 @@ function normalizeBoard(b) {
     folders: Array.isArray(b.folders) ? b.folders : [],
     notes: Array.isArray(b.notes) ? b.notes : [],
     sheets: Array.isArray(b.sheets) ? b.sheets : [],
+    images: Array.isArray(b.images) ? b.images : [],
     boardDrawing: Array.isArray(b.boardDrawing) ? b.boardDrawing : [],
     view: (v && typeof v.zoom === 'number') ? { zoom: v.zoom, panX: v.panX || 0, panY: v.panY || 0 } : { zoom: 1, panX: 0, panY: 0 },
   };
@@ -2121,6 +2279,7 @@ function syncActiveBoard() {
   b.folders = folders;
   b.notes = allNotes;
   b.sheets = allSheets;
+  b.images = allImages;
   b.boardDrawing = boardDrawing;
   b.view = { zoom, panX, panY };
 }
@@ -2129,9 +2288,10 @@ function loadBoard(b) {
   folders = b.folders;
   allNotes = b.notes;
   allSheets = b.sheets;
+  allImages = Array.isArray(b.images) ? b.images : [];
   boardDrawing = b.boardDrawing;
   // compacta z-index preservando a ordem de empilhamento
-  const stack = [...allNotes, ...allSheets, ...folders].sort((a, c) => (a.z || 0) - (c.z || 0));
+  const stack = [...allNotes, ...allSheets, ...allImages, ...folders].sort((a, c) => (a.z || 0) - (c.z || 0));
   zCounter = 1;
   stack.forEach((o) => { o.z = ++zCounter; });
   undoStack.length = 0;
@@ -2168,14 +2328,19 @@ function deleteBoard(id) {
   syncActiveBoard(); // garante que os dados da board ativa estão atualizados
   const b = boards.find((x) => x.id === id);
   if (!b) return;
-  const nNotes = b.notes.length, nSheets = b.sheets.length;
-  const aviso = (nNotes || nSheets)
-    ? ` As ${nNotes} nota(s) e ${nSheets} folha(s) vão para a Lixeira (recuperáveis); pastas e desenho desta board serão descartados.`
+  const nNotes = b.notes.length, nSheets = b.sheets.length, nImages = (b.images || []).length;
+  const partes = [];
+  if (nNotes) partes.push(`${nNotes} nota(s)`);
+  if (nSheets) partes.push(`${nSheets} folha(s)`);
+  if (nImages) partes.push(`${nImages} imagem(ns)`);
+  const aviso = partes.length
+    ? ` ${partes.join(', ')} vão para a Lixeira (recuperáveis); pastas e desenho desta board serão descartados.`
     : '';
   if (!confirm(`Excluir a board "${b.name}"?${aviso}`)) return;
-  // notas e folhas vão para a Lixeira (recuperáveis)
+  // notas, folhas e imagens vão para a Lixeira (recuperáveis)
   b.notes.forEach((d) => { d.folderId = null; sendToTrash('note', d, null); });
   b.sheets.forEach((d) => { d.folderId = null; sendToTrash('sheet', d, null); });
+  (b.images || []).forEach((d) => { d.folderId = null; sendToTrash('image', d, null); });
   const idx = boards.findIndex((x) => x.id === id);
   boards = boards.filter((x) => x.id !== id);
   if (activeBoardId === id) {
@@ -2279,16 +2444,23 @@ function moveItemToBoard(kind, dataObj, destId) {
     const fid = dataObj.id;
     const mvNotes = allNotes.filter((n) => n.folderId === fid);
     const mvSheets = allSheets.filter((s) => s.folderId === fid);
+    const mvImages = allImages.filter((i) => i.folderId === fid);
     allNotes = allNotes.filter((n) => n.folderId !== fid);
     allSheets = allSheets.filter((s) => s.folderId !== fid);
+    allImages = allImages.filter((i) => i.folderId !== fid);
     folders = folders.filter((x) => x.id !== fid);
     dest.folders.push(dataObj);
     mvNotes.forEach((n) => dest.notes.push(n));
     mvSheets.forEach((s) => dest.sheets.push(s));
+    mvImages.forEach((i) => (dest.images = dest.images || []).push(i));
   } else if (kind === 'sheet') {
     allSheets = allSheets.filter((s) => s !== dataObj);
     dataObj.folderId = null;
     dest.sheets.push(dataObj);
+  } else if (kind === 'image') {
+    allImages = allImages.filter((i) => i !== dataObj);
+    dataObj.folderId = null;
+    (dest.images = dest.images || []).push(dataObj);
   } else {
     allNotes = allNotes.filter((n) => n !== dataObj);
     dataObj.folderId = null;

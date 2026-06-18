@@ -205,8 +205,13 @@ function setupAutoUpdate() {
   autoUpdater.on('error', (e) => send('update:error', { message: String((e && e.message) || e) }));
   autoUpdater.on('download-progress', (p) => send('update:progress', { percent: Math.round(p.percent) }));
   autoUpdater.on('update-downloaded', (i) => send('update:downloaded', { version: i.version }));
-  // checa pouco depois de abrir (deixa a janela montar primeiro)
-  setTimeout(() => { autoUpdater.checkForUpdates().catch(() => {}); }, 4000);
+  // só checa quando a janela terminou de carregar (garante que o renderer já
+  // registrou os ouvintes de evento), com um pequeno respiro para a rede.
+  const startCheck = () => setTimeout(() => { autoUpdater.checkForUpdates().catch(() => {}); }, 1500);
+  if (mainWindow && mainWindow.webContents) {
+    if (mainWindow.webContents.isLoading()) mainWindow.webContents.once('did-finish-load', startCheck);
+    else startCheck();
+  }
 }
 
 // ---- Janela ----
